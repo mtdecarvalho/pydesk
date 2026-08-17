@@ -171,21 +171,21 @@ class Ticket(models.Model):
             self.equipe = self.categoria.equipe_padrao
             self.estado = self.ABERTO
 
-        ## Se houver um técnico associado, muda o estado para EM ATENDIMENTO
-        if self.tecnico:
-            self.estado = self.EM_ATENDIMENTO
-        ## Se não houver técnico associado e o ticket não estiver encerrado, muda para ABERTO
-        elif not self.tecnico and not self.solucao and not self.data_encerramento:
-            self.estado = self.ABERTO
-
-        # Se a solução do ticket foi preenchida, muda o estado para SOLUCIONADO e gera a data de solução
-        if self.solucao:
-            self.estado = self.SOLUCIONADO
-            self.data_encerramento = datetime.now()
-
-        # Se o ticket foi cancelado pelo solicitante, remove da lista do técnico responsável.
-        if self.estado == self.CANCELADO:
-            self.tecnico = None
+        # ## Se houver um técnico associado, muda o estado para EM ATENDIMENTO
+        # if self.tecnico:
+        #     self.estado = self.EM_ATENDIMENTO
+        # ## Se não houver técnico associado e o ticket não estiver encerrado, muda para ABERTO
+        # elif not self.tecnico and not self.solucao and not self.data_encerramento:
+        #     self.estado = self.ABERTO
+# 
+        # # Se a solução do ticket foi preenchida, muda o estado para SOLUCIONADO e gera a data de solução
+        # if self.solucao:
+        #     self.estado = self.SOLUCIONADO
+        #     self.data_encerramento = datetime.now()
+# 
+        # # Se o ticket foi cancelado pelo solicitante, remove da lista do técnico responsável.
+        # if self.estado == self.CANCELADO:
+        #     self.tecnico = None
 
         # Roda o save() padrão do Django.
         super().save(**kwargs)
