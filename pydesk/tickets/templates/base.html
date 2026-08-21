@@ -23,7 +23,9 @@
             <div class="col-sm-2">
             {% block barra_lateral %}
                 <ul class="sidebar-nav">
-                <li><a href="{% url 'index' %}">Home</a></li>
+                <li><a href="{% url 'index' %}">Inicio</a></li>
+                <li><a href="{% url "tickets" %}">Tickets</a></li>
+                <li><a href="{% url "ativos" %}">Ativos</a></li>
                 </ul>
             {% endblock %}
             </div>

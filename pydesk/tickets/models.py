@@ -2,6 +2,7 @@ from datetime import datetime
 import uuid
 
 from django.db import models
+from django.urls import reverse
 from pydesk.settings import AUTH_USER_MODEL as Usuario
 
 # Create your models here.
@@ -31,6 +32,9 @@ class Ativo(models.Model):
         null=False,
         help_text="Escreva o nome do ativo a ser registrado"
     )
+
+    def get_absolute_url(self):
+        return reverse('ativo-detail', args=[str(self.id)])
 
     def __str__(self):
         return f'{self.id} - {self.categoria} - {self.nome}'
@@ -176,6 +180,9 @@ class Ticket(models.Model):
         default=None,
         verbose_name="Técnico"
     )
+
+    def get_absolute_url(self):
+        return reverse('ticket-detail', args=[str(self.id)])
 
     def __str__(self):
         return f'{self.id} - {self.titulo} - {self.estado}'

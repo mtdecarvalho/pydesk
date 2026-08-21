@@ -1,7 +1,21 @@
 from django.shortcuts import render
+from django.views import generic
 from .models import Ticket, Ativo
 
 # Create your views here.
+
+class TicketListView(generic.ListView):
+    model = Ticket
+
+class TicketDetailView(generic.DetailView):
+    model = Ticket
+
+class AtivoListView(generic.ListView):
+    model = Ativo
+
+class AtivoDetailView(generic.DetailView):
+    model = Ativo
+
 def index(request):
     '''Função de view da página de índice do PyDesk'''
 
