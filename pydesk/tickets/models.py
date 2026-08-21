@@ -1,25 +1,39 @@
 from datetime import datetime
+import uuid
 
 from django.db import models
-from pydesk.settings import AUTH_USER_MODEL as User
-from django.contrib.auth.models import Group
+from pydesk.settings import AUTH_USER_MODEL as Usuario
 
 # Create your models here.
 
-class Categoria(models.Model):
-    nome = models.CharField(
-        max_length=10,
-        null=False
+class Ativo(models.Model):
+    '''Modelo usado para representar um ativo (hardware, software ou rede) da organização.'''
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+
+    HARDWARE = "HW"
+    SOFTWARE = "SW"
+    REDES = "RD"
+
+    ESCOLHA_CATEGORIA = (
+        (HARDWARE, "Hardware"),
+        (SOFTWARE, "Software"),
+        (REDES, "Redes"),
     )
 
-    equipe_padrao = models.ForeignKey(
-        Group,
-        on_delete=models.RESTRICT,
-        null=False
+    categoria = models.CharField(
+        choices=ESCOLHA_CATEGORIA,
+        max_length=2,
+        null=False,
+        help_text="Escolha a categoria do ativo a ser registrado"
+    )
+
+    nome = models.CharField(
+        null=False,
+        help_text="Escreva o nome do ativo a ser registrado"
     )
 
     def __str__(self):
-        return self.nome
+        return f'{self.id} - {self.categoria} - {self.nome}'
 
 class Ticket(models.Model):
     '''Modelo usado para representar um ticket.'''
@@ -28,11 +42,11 @@ class Ticket(models.Model):
     # DATAS USADAS NO TICKET
 
     # Gerada automaticamente na abertura
-    data_abertura = models.DateTimeField(
+    data_criacao = models.DateTimeField(
         auto_now_add=True,
         null=False,
-        verbose_name="Data de abertura do ticket",
-        help_text="Data de abertura do ticket"
+        verbose_name="Data da criação",
+        help_text="Data da criação do ticket"
     )
 
     # Gerada ao encerrar um ticket
@@ -40,7 +54,7 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         default=None,
-        verbose_name="Data de encerramento do ticket",
+        verbose_name="Data de encerramento",
         help_text="Data de encerramento do ticket"
     )
 
@@ -53,34 +67,45 @@ class Ticket(models.Model):
     )
 
     # CATEGORIA DO TICKET
-    # O usuário seleciona isso e a aplicação direciona para a equipe correta
     # Definido pelo usuário
-    categoria = models.ForeignKey(
-        Categoria,
+
+    HARDWARE = "HW"
+    SOFTWARE = "SW"
+    REDES = "RD"
+
+    ESCOLHA_CATEGORIA = (
+        (HARDWARE, "Hardware"),
+        (SOFTWARE, "Software"),
+        (REDES, "Redes"),
+    )
+
+    categoria = models.CharField(
+        choices=ESCOLHA_CATEGORIA,
+        max_length=2,
         null=False,
-        on_delete=models.RESTRICT
+        default=HARDWARE,
+        help_text='Escolha a categoria do seu ticket',
+        verbose_name='Categoria'
     )
 
-    # Fila da equipe atualmente responsável pelo ticket, preenchido automaticamente pelo sistema
-    # Atribuido automaticamente pelo sistema na criação do chamado
-    equipe = models.ForeignKey(
-        Group,
-        on_delete=models.RESTRICT,
-        related_name="fila_equipe"
+    ativo = models.ForeignKey(
+        Ativo,
+        on_delete=models.PROTECT,
+        null=False,
+        default=None,
+        help_text="Escolha o ativo associado à essa solicitação"
     )
-
-    # configuration_item =
 
     # PRIORIDADE DO TICKET
-
+    # Definido pelo usuário
     ALTA = "P1"
     MODERADA = "P2"
     BAIXA = "P3"
 
     ESCOLHA_PRIORIDADE = (
-        (ALTA, 'Alta'),
-        (MODERADA, 'Moderada'),
-        (BAIXA, 'Baixa')
+        (ALTA, "Alta"),
+        (MODERADA, "Moderada"),
+        (BAIXA, "Baixa")
     )
 
     prioridade = models.CharField(
@@ -89,25 +114,21 @@ class Ticket(models.Model):
         choices=ESCOLHA_PRIORIDADE,
         default=BAIXA,
         help_text="Escolha a prioridade do ticket",
-        verbose_name="Prioridade do ticket"
+        verbose_name="Prioridade"
     )
 
     # ESTADO DO TICKET
     # Ao criar o ticket a primeira vez, será Aberto
-    # Quando um técnico puxar o ticket para sua fila, será Em Atendimento
-    # Quando um técnico encerrar o ticket, será Solucionado
+    # Quando um técnico encerrar o ticket, será Encerrado
     # Quando um usuário/técnico cancelar o ticket, será Cancelado
-    # Na maioria das vezes, o estado vai ser alocado automaticamente pela aplicação
 
     ABERTO = "AB"
-    EM_ATENDIMENTO = "EA"
-    SOLUCIONADO = "SC"
+    ENCERRADO = "EN"
     CANCELADO = "CC"
 
     ESCOLHA_ESTADO = (
         (ABERTO, "Aberto"),
-        (EM_ATENDIMENTO, "Em Atendimento"),
-        (SOLUCIONADO, "Solucionado"),
+        (ENCERRADO, "Encerrado"),
         (CANCELADO, "Cancelado")
     )
 
@@ -117,81 +138,47 @@ class Ticket(models.Model):
         choices=ESCOLHA_ESTADO,
         default=ABERTO,
         help_text="Estado atual do ticket",
-        verbose_name="Estado atual do ticket"
+        verbose_name="Estado"
     )
 
     # INFORMAÇÕES DESCRITIVAS DO TICKET
 
+    # Título do ticket
     titulo = models.CharField(
         max_length=50,
         null=False,
         help_text="Insira o titulo do ticket",
-        verbose_name="Título do ticket"
+        verbose_name="Título"
     )
 
+    # Descrição do ticket
     descricao = models.TextField(
         null=False,
-        help_text="Descreva em detalhes o suporte que você precisa neste ticket",
-        verbose_name="Descrição do ticket"
+        help_text="Descreva em detalhes a sua solicitação",
+        verbose_name="Descrição"
     )
 
+    # Solução do ticket
     # PREENCHIDA SOMENTE NO ENCERRAMENTO
-
     solucao = models.TextField(
         null=True,
         blank=True,
         help_text="Descreva em detalhes o que foi feito para solucionar este ticket",
-        verbose_name="Solução do ticket"
+        verbose_name="Solução"
     )
 
     # Técnico associado ao ticket
     tecnico = models.ForeignKey(
-        User,
+        Usuario,
         on_delete=models.RESTRICT,
         null=True,
         blank=True,
         default=None,
-        related_name="tecnico"
+        verbose_name="Técnico"
     )
-
-    # Solicitante (criador) do ticket
-    # Vai ser atribuido automaticamente pela view
-    solicitante = models.ForeignKey(
-        User,
-        on_delete=models.RESTRICT,
-        related_name="solicitante"
-    )
-
-    def save(self, **kwargs):
-        # No primeiro salvamento, define a equipe associada ao ticket com base
-        # na equipe padrão do modelo de Categoria
-        # A pk só é gerada ao rodar o save(), então checando se ela existe ou não
-        # é uma maneira de checar se o objeto já existe ou não
-        if not self.pk and not self.equipe and self.categoria:
-            self.equipe = self.categoria.equipe_padrao
-            self.estado = self.ABERTO
-
-        # ## Se houver um técnico associado, muda o estado para EM ATENDIMENTO
-        # if self.tecnico:
-        #     self.estado = self.EM_ATENDIMENTO
-        # ## Se não houver técnico associado e o ticket não estiver encerrado, muda para ABERTO
-        # elif not self.tecnico and not self.solucao and not self.data_encerramento:
-        #     self.estado = self.ABERTO
-# 
-        # # Se a solução do ticket foi preenchida, muda o estado para SOLUCIONADO e gera a data de solução
-        # if self.solucao:
-        #     self.estado = self.SOLUCIONADO
-        #     self.data_encerramento = datetime.now()
-# 
-        # # Se o ticket foi cancelado pelo solicitante, remove da lista do técnico responsável.
-        # if self.estado == self.CANCELADO:
-        #     self.tecnico = None
-
-        # Roda o save() padrão do Django.
-        super().save(**kwargs)
 
     def __str__(self):
-        return f'${self.id} - ${self.titulo} - ${self.estado}'
+        return f'{self.id} - {self.titulo} - {self.estado}'
 
 class Comentario(models.Model):
     '''Modelo usado para representar comentários de um ticket.'''
@@ -200,7 +187,7 @@ class Comentario(models.Model):
     id_ticket = models.ForeignKey(
         Ticket,
         on_delete=models.RESTRICT,
-        verbose_name="ID do ticket associado ao comentário"
+        verbose_name="ID do ticket"
     )
 
     comentario = models.TextField(
@@ -216,8 +203,9 @@ class Comentario(models.Model):
     )
 
     usuario = models.ForeignKey(
-        User,
-        on_delete=models.RESTRICT
+        Usuario,
+        on_delete=models.RESTRICT,
+        null=False
     )
 
     def __str__(self):

@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block titulo %}
+    <title>Index</title>
+{% endblock titulo %}
+
+{% block conteudo %}
+    <h1>
+        Indice
+    </h1>
+
+    <ul>
+        <li><strong>Total de tickets:</strong> {{ qtd_tickets }}</li>
+        <li><strong>Total de tickets abertos:</strong> {{ qtd_tickets_abertos }}</li>
+        <li><strong>Total de tickets encerrados:</strong> {{ qtd_tickets_encerrados }}</li>
+        <li><strong>Total de tickets cancelados:</strong> {{ qtd_tickets_cancelados }}</li>
+        <li><strong>Total de ativos:</strong> {{ qtd_ativos }}</li>
+    </ul>
+{% endblock conteudo %}
