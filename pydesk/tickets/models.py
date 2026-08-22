@@ -8,7 +8,12 @@ from pydesk.settings import AUTH_USER_MODEL as Usuario
 # Create your models here.
 
 class Ativo(models.Model):
-    '''Modelo usado para representar um ativo (hardware, software ou rede) da organização.'''
+    '''
+    Modelo usado para representar um ativo (hardware, software ou rede) da organização.
+    id -> UUIDField, chave primária
+    categoria -> CharField, choices = ESCOLHA_CATEGORIA
+    nome -> CharField
+    '''
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     HARDWARE = "HW"
@@ -40,7 +45,21 @@ class Ativo(models.Model):
         return f'{self.id} - {self.categoria} - {self.nome}'
 
 class Ticket(models.Model):
-    '''Modelo usado para representar um ticket.'''
+    '''
+    Modelo usado para representar um ticket.
+    id -> BigAutoField, chave primária
+    data_criacao -> datetime
+    data_encerramento -> datetime
+    data_ultima_atualizacao -> datetime
+    categoria -> CharField, choices = ESCOLHA_CATEGORIA
+    ativo -> ForeignKey, modelo "Ativo"
+    prioridade -> CharField, choices = ESCOLHA_PRIORIDADE
+    estado -> CharField, choices = ESCOLHA_ESTADO
+    titulo -> CharField
+    descricao -> TextField
+    solucao -> TextField
+    tecnico -> ForeignKey, modelo "Usuario"
+    '''
     id = models.BigAutoField(primary_key=True)
 
     # DATAS USADAS NO TICKET
@@ -188,7 +207,14 @@ class Ticket(models.Model):
         return f'{self.id} - {self.titulo} - {self.estado}'
 
 class Comentario(models.Model):
-    '''Modelo usado para representar comentários de um ticket.'''
+    '''
+    Modelo usado para representar comentários de um ticket.
+    id -> BigAutoField, chave primária
+    id_ticket -> ForeignKey, modelo "Ticket"
+    comentario -> TextField
+    data_comentario -> datetime
+    usuario -> ForeignKey, modelo "Usuario"
+    '''
     id = models.BigAutoField(primary_key=True)
 
     id_ticket = models.ForeignKey(
@@ -197,17 +223,18 @@ class Comentario(models.Model):
         verbose_name="ID do ticket"
     )
 
+    data = models.DateTimeField(
+        auto_now_add=True,
+        null=False,
+        verbose_name="Data do comentário"
+    )
+
     comentario = models.TextField(
         null=False,
         help_text="Insira o texto do seu comentário",
         verbose_name="Comentário"
     )
 
-    data_comentario = models.DateTimeField(
-        auto_now_add=True,
-        null=False,
-        verbose_name="Data do comentário"
-    )
 
     usuario = models.ForeignKey(
         Usuario,
@@ -216,5 +243,5 @@ class Comentario(models.Model):
     )
 
     def __str__(self):
-        return f'${self.data_comentario} - ${self.usuario} - ${self.comentario}'
+        return f'{self.data} - {self.usuario} - {self.comentario}'
 

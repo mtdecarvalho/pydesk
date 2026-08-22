@@ -5,5 +5,33 @@
 {% endblock titulo %}
 
 {% block conteudo %}
-    {{ ticket.id }}
+    <a href="{% url "tickets" %}">Voltar</a>
+    <h1>{{ ticket.id }}</h1>
+    <li>
+        <ul>Aberto em: {{ ticket.data_criacao }}</ul>
+        <ul>Última modificação em: {{ ticket.data_ultima_atualizacao }}</ul>
+        {% if ticket.estado == "EN" %}
+            <ul>Encerrado em: {{ ticket.data_encerramento }}</ul>
+        {% endif %}
+        <ul>Categoria: {{ ticket.get_categoria_display }}</ul>
+        <ul>Prioridade: {{ ticket.get_prioridade_display }}</ul>
+        <ul>Estado: {{ ticket.get_estado_display }}</ul>
+        <ul>Técnico: {{ ticket.tecnico.first_name }} {{ ticket.tecnico.last_name }}</ul>
+    </li>
+    <h2>{{ ticket.titulo }}</h2>
+    <p>{{ ticket.descricao }}</p>
+    {% if ticket.estado == "EN" and ticket.solucao %}
+        <h3>Solução</h3>
+        <p>{{ ticket.solucao }}</p>
+    {% endif %}
+    <h3>Comentários</h3>
+    {% if ticket.comentario_set.all %}
+        {% for comentario in ticket.comentario_set.all %}
+        <h4>{{ comentario.usuario.first_name }} {{ comentario.usuario.last_name }}</h4>
+        <h5>{{ comentario.data }}</h5>
+        <p>{{ comentario.comentario }}</p>
+    {% endfor %}
+    {% else %}
+        <p>Não há comentários para este ticket.</p>
+    {% endif %}
 {% endblock conteudo %}
