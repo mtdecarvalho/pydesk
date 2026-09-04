@@ -25,6 +25,7 @@
         <p>{{ ticket.solucao }}</p>
     {% endif %}
     <h3>Comentários</h3>
+
     {% if ticket.comentario_set.all %}
         {% for comentario in ticket.comentario_set.all %}
         <h4>{{ comentario.usuario.first_name }} {{ comentario.usuario.last_name }}</h4>
@@ -34,4 +35,12 @@
     {% else %}
         <p>Não há comentários para este ticket.</p>
     {% endif %}
+
+    <form action="" method="post">
+        {% csrf_token %}
+        <table>
+        {{ form.as_table }}
+        </table>
+        <input type="submit" value="Submit">
+    </form>
 {% endblock conteudo %}
