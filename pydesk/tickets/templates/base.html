@@ -25,7 +25,6 @@
                 <ul class="sidebar-nav">
                 <li><a href="{% url 'index' %}">Inicio</a></li>
                 <li><a href="{% url "tickets" %}">Tickets</a></li>
-                <li><a href="{% url "ativos" %}">Ativos</a></li>
                 {% if user.is_authenticated %}
                 <p>Bem vindo, {{ user.username }}</p>
                 <form id="logout-form" method="post" action="{% url 'logout' %}">
@@ -38,6 +37,7 @@
                 </ul>
             {% endblock %}
             </div>
+            <div class="navbar">{% block navbar %}{% endblock %}</div>
             <div class="col-sm-10 ">{% block conteudo %}{% endblock %}</div>
         </div>
         </div>

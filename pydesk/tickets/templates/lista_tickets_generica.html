@@ -1,0 +1,21 @@
+{% extends "tickets_home.html" %}
+
+{% block titulo %}<title>{{ titulo }}</title>{% endblock titulo %}
+
+{% block conteudo %}
+    <h1>{{ aba }}</h1>
+    {% if perms.tickets.pode_cancelar %}
+    <a href="{% url "criar_ticket" %}">Criar novo ticket</a>
+    {% endif %}
+    {% if lista_tickets %}
+    <ul>
+        {% for ticket in lista_tickets %}
+        <li>
+            <a href="{{ ticket.get_absolute_url }}">{{ ticket }}</a>
+        </li>
+        {% endfor %}
+    </ul>
+    {% else %}
+    <p>Nenhum ticket disponível.</p>
+    {% endif %}
+{% endblock conteudo %}

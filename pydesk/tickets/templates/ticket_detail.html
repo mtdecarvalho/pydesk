@@ -6,6 +6,12 @@
 
 {% block conteudo %}
     <a href="{% url "tickets" %}">Voltar</a>
+    {% if perms.tickets.pode_encerrar and ticket.estado != "EN" %}
+    <a href="{% url "encerrar_ticket" ticket.pk %}">Encerrar ticket</a>
+    {% endif %}
+    {% if perms.tickets.pode_encerrar and ticket.estado != "EN" and ticket.tecnico == None %}
+    <a href="">Alocar ticket a mim</a>
+    {% endif %}
     <h1>{{ ticket.id }}</h1>
     <li>
         <ul>Aberto em: {{ ticket.data_criacao }}</ul>

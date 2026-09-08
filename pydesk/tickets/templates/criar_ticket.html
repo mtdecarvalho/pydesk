@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block titulo %}<title>Pydesk - Criar ticket</title>{% endblock %}
+
+{% block conteudo %}
+<form action="" method="post">
+    {% csrf_token %}
+    <table>
+        {{ form.as_table }}
+    </table>
+    <input type="submit" value="Criar ticket">
+</form>
+{% endblock conteudo %}

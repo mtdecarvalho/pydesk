@@ -7,43 +7,6 @@ from pydesk.settings import AUTH_USER_MODEL as Usuario
 
 # Create your models here.
 
-class Ativo(models.Model):
-    '''
-    Modelo usado para representar um ativo (hardware, software ou rede) da organização.
-    id -> UUIDField, chave primária
-    categoria -> CharField, choices = ESCOLHA_CATEGORIA
-    nome -> CharField
-    '''
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    HARDWARE = "HW"
-    SOFTWARE = "SW"
-    REDES = "RD"
-
-    ESCOLHA_CATEGORIA = (
-        (HARDWARE, "Hardware"),
-        (SOFTWARE, "Software"),
-        (REDES, "Redes"),
-    )
-
-    categoria = models.CharField(
-        choices=ESCOLHA_CATEGORIA,
-        max_length=2,
-        null=False,
-        help_text="Escolha a categoria do ativo a ser registrado"
-    )
-
-    nome = models.CharField(
-        null=False,
-        help_text="Escreva o nome do ativo a ser registrado"
-    )
-
-    def get_absolute_url(self):
-        return reverse('ativo-detail', args=[str(self.id)])
-
-    def __str__(self):
-        return f'{self.id} - {self.categoria} - {self.nome}'
-
 class Ticket(models.Model):
     '''
     Modelo usado para representar um ticket.
@@ -109,14 +72,6 @@ class Ticket(models.Model):
         default=HARDWARE,
         help_text='Escolha a categoria do seu ticket',
         verbose_name='Categoria'
-    )
-
-    ativo = models.ForeignKey(
-        Ativo,
-        on_delete=models.PROTECT,
-        null=False,
-        default=None,
-        help_text="Escolha o ativo associado à essa solicitação"
     )
 
     # PRIORIDADE DO TICKET
@@ -205,6 +160,12 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f'{self.id} - {self.titulo} - {self.estado}'
+
+    class Meta:
+        permissions = (
+            ("pode_encerrar", "Pode encerrar o ticket"),
+            ("pode_cancelar", "Pode cancelar o ticket"),
+        )
 
 class Comentario(models.Model):
     '''
