@@ -10,6 +10,6 @@ urlpatterns = [
     path('tickets/nao_alocados', views.TicketsNaoAlocadosView, name="tickets_nao_alocados"),
     path('tickets/criar', views.CriarTicketView, name="criar_ticket"),
     #path('tickets/<int:pk>', views.TicketDetailView.as_view(), name="ticket-detail"),
-    path('tickets/<int:pk>/', views.TicketDetailView, name="ticket-detail"),
+    path('tickets/<int:pk>/', views.TicketDetalheView, name="ticket_detalhe"),
     path('tickets/<int:pk>/encerrar', views.EncerrarTicketView, name="encerrar_ticket"),
 ]

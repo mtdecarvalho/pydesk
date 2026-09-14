@@ -156,7 +156,7 @@ class Ticket(models.Model):
     )
 
     def get_absolute_url(self):
-        return reverse('ticket-detail', args=[str(self.id)])
+        return reverse('ticket_detalhe', args=[str(self.id)])
 
     def __str__(self):
         return f'{self.id} - {self.titulo} - {self.estado}'

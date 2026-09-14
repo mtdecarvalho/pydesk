@@ -3,6 +3,8 @@ from datetime import datetime
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import generic
 
+from autenticacao.models import Usuario
+
 from .forms import ComentarioForm, CriarTicketForm, EncerrarTicketForm
 from .models import Ticket, Comentario
 
@@ -72,31 +74,44 @@ def TicketsNaoAlocadosView(request):
 #     model = Ticket
 
 @login_required
-def TicketDetailView(request, pk):
+def TicketDetalheView(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
 
     if request.method == 'POST':
+        if "submit_comentario" in request.POST:
+            comentario_form = ComentarioForm(request.POST, prefix='comentario')
 
-        form = ComentarioForm(request.POST)
+            if comentario_form.is_valid():
+                comentario = comentario_form.cleaned_data['comentario']
+                id_ticket = ticket
+                usuario = request.user
+                comentario = Comentario(comentario=comentario, id_ticket=id_ticket, usuario=usuario)
+                comentario.save()
+                ticket.save()
 
-        if form.is_valid():
-            comentario = form.cleaned_data['comentario']
-            id_ticket = ticket
-            usuario = request.user
-            comentario = Comentario(comentario=comentario, id_ticket=id_ticket, usuario=usuario)
-            comentario.save()
+                return redirect('ticket_detalhe', pk=pk)
+        elif "alocar_ticket" in request.POST:
+            comentario_form = ComentarioForm(prefix='comentario')
 
-            return redirect('ticket-detail', pk=pk)
+            tecnico = request.user
+            ticket.tecnico = tecnico
+            ticket.save()
 
+            return redirect('ticket_detalhe', pk=pk)
+        elif "desalocar_ticket" in request.POST:
+            comentario_form = ComentarioForm(prefix='comentario')
+
+            ticket.tecnico = None
+            ticket.save()
     else:
-        form = ComentarioForm(initial={"comentario": ""})
+        comentario_form = ComentarioForm(initial={"comentario": ""}, prefix="comentario")
 
     context = {
-        'form': form,
+        'comentario_form': comentario_form,
         'ticket': ticket
     }
 
-    return render(request, "ticket_detail.html", context=context)
+    return render(request, "ticket_detalhe.html", context=context)
 
 @login_required
 @permission_required('tickets.pode_cancelar')
