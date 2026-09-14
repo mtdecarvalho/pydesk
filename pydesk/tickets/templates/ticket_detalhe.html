@@ -6,21 +6,25 @@
 
 {% block conteudo %}
     <a href="{% url "tickets" %}">Voltar</a>
-    {% if perms.tickets.pode_encerrar and ticket.estado != "EN" %}
+    {% if perms.tickets.pode_encerrar and ticket.estado == "AB" %}
     <a href="{% url "encerrar_ticket" ticket.pk %}">Encerrar ticket</a>
+        {% if ticket.tecnico == None %}
+        <form action="" method="post">
+            {% csrf_token %}
+            <input type="submit" name="alocar_ticket" value="Alocar ticket">
+        </form>
+        {% endif %}
+        {% if ticket.tecnico != None %}
+        <form action="" method="post">
+            {% csrf_token %}
+            <input type="submit" name="desalocar_ticket" value="Desalocar ticket">
+        </form>
+        {% endif %}
     {% endif %}
-    {% if perms.tickets.pode_encerrar and ticket.estado != "EN" and ticket.tecnico == None %}
-    <form action="" method="post">
-        {% csrf_token %}
-        <input type="submit" name="alocar_ticket" value="Alocar ticket">
-    </form>
+    {% if perms.tickets.pode_cancelar and ticket.estado == "AB" and ticket.solicitante == user %}
+    <a href="{% url "cancelar_ticket" ticket.pk %}">Cancelar ticket</a>
     {% endif %}
-    {% if perms.tickets.pode_encerrar and ticket.estado != "EN" and ticket.tecnico != None %}
-    <form action="" method="post">
-        {% csrf_token %}
-        <input type="submit" name="desalocar_ticket" value="Desalocar ticket">
-    </form>
-    {% endif %}
+
     <h1>{{ ticket.id }}</h1>
     <li>
         <ul>Aberto em: {{ ticket.data_criacao }}</ul>
@@ -31,13 +35,24 @@
         <ul>Categoria: {{ ticket.get_categoria_display }}</ul>
         <ul>Prioridade: {{ ticket.get_prioridade_display }}</ul>
         <ul>Estado: {{ ticket.get_estado_display }}</ul>
+        {% if ticket.tecnico %}
         <ul>Técnico: {{ ticket.tecnico.first_name }} {{ ticket.tecnico.last_name }}</ul>
+        {% else %}
+        <ul>Técnico: Nenhum técnico associado</ul>
+        {% endif %}
+        <ul>Solicitante: {{ ticket.solicitante.first_name }} {{ ticket.solicitante.last_name }}</ul>
     </li>
     <h2>{{ ticket.titulo }}</h2>
     <p>{{ ticket.descricao }}</p>
     {% if ticket.estado == "EN" and ticket.solucao %}
-        <h3>Solução</h3>
+        <h3>Ticket encerrado</h3>
+        <h4>Solução</h4>
         <p>{{ ticket.solucao }}</p>
+    {% endif %}
+    {% if ticket.estado == "CC" and ticket.motivo_cancelamento %}
+        <h3>Ticket cancelado</h3>
+        <h4>Motivo</h4>
+        <p>{{ ticket.motivo_cancelamento }}</p>
     {% endif %}
     <h3>Comentários</h3>
 
@@ -52,14 +67,16 @@
     {% endif %}
 
     {% if ticket.estado == "AB" %}
+        {% if ticket.solicitante == user or ticket.tecnico == user %}
+        
+        <form action="" method="post">
+            {% csrf_token %}
+            <table>
+            {{ comentario_form.as_table }}
+            </table>
+            <input type="submit" name="submit_comentario" value="Adicionar comentário">
+        </form>
 
-    <form action="" method="post">
-        {% csrf_token %}
-        <table>
-        {{ comentario_form.as_table }}
-        </table>
-        <input type="submit" name="submit_comentario" value="Adicionar comentário">
-    </form>
-
+        {% endif %}
     {% endif %}
 {% endblock conteudo %}

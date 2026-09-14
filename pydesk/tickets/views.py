@@ -5,7 +5,7 @@ from django.views import generic
 
 from autenticacao.models import Usuario
 
-from .forms import ComentarioForm, CriarTicketForm, EncerrarTicketForm
+from .forms import CancelarTicketForm, ComentarioForm, CriarTicketForm, EncerrarTicketForm
 from .models import Ticket, Comentario
 
 from django.contrib.auth.decorators import login_required, permission_required
@@ -21,7 +21,12 @@ def TicketsHomeView(request):
 
 @login_required
 def MeusTicketsView(request):
-    lista_tickets = Ticket.objects.filter(tecnico=request.user).filter(estado="AB")
+    if request.user.has_perm('tickets.pode_encerrar'):
+        lista_tickets = Ticket.objects.filter(tecnico=request.user).filter(estado="AB")
+    elif request.user.has_perm('tickets.pode_cancelar'):
+        lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado="AB")
+    else:
+        lista_tickets = None
 
     context = {
         "lista_tickets": lista_tickets,
@@ -45,6 +50,19 @@ def TicketsEncerradosView(request):
     return render(request, "lista_tickets_generica.html", context=context)
 
 @login_required
+@permission_required('tickets.pode_cancelar')
+def TicketsCanceladosView(request):
+    lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado="CC")
+
+    context = {
+        "lista_tickets": lista_tickets,
+        "titulo": "Pydesk - Tickets Cancelados",
+        "aba": "Tickets Cancelados"
+    }
+
+    return render(request, "lista_tickets_generica.html", context=context)
+
+@login_required
 @permission_required('tickets.pode_encerrar')
 def TicketsAbertosView(request):
     lista_tickets = Ticket.objects.filter(estado="AB")
@@ -60,7 +78,7 @@ def TicketsAbertosView(request):
 @login_required
 @permission_required('tickets.pode_encerrar')
 def TicketsNaoAlocadosView(request):
-    lista_tickets = Ticket.objects.filter(tecnico=None)
+    lista_tickets = Ticket.objects.filter(estado="AB").filter(tecnico=None)
 
     context = {
         "lista_tickets": lista_tickets,
@@ -95,14 +113,37 @@ def TicketDetalheView(request, pk):
 
             tecnico = request.user
             ticket.tecnico = tecnico
+
+            comentario = f"Ticket alocado para a fila de {tecnico.first_name} {tecnico.last_name}."
+            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
+
             ticket.save()
+            comentario.save()
 
             return redirect('ticket_detalhe', pk=pk)
         elif "desalocar_ticket" in request.POST:
             comentario_form = ComentarioForm(prefix='comentario')
 
+            comentario = f"Ticket desalocado da fila de {ticket.tecnico.first_name} {ticket.tecnico.last_name}."
+            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
+            comentario.save()
+
             ticket.tecnico = None
             ticket.save()
+
+            
+        elif "cancelar_ticket" in request.POST:
+            comentario_form = ComentarioForm(prefix='comentario')
+
+            comentario = f"Ticket cancelado por {ticket.solicitante.first_name} {ticket.solicitante.last_name}."
+            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
+            comentario.save()
+
+            ticket.tecnico = None
+            ticket.estado = "CC"
+
+            ticket.save()
+
     else:
         comentario_form = ComentarioForm(initial={"comentario": ""}, prefix="comentario")
 
@@ -124,13 +165,20 @@ def CriarTicketView(request):
             prioridade = form.cleaned_data['prioridade']
             titulo = form.cleaned_data['titulo']
             descricao = form.cleaned_data['descricao']
+            solicitante = request.user
 
             ticket = Ticket(categoria=categoria,
                             prioridade=prioridade,
                             titulo=titulo,
-                            descricao=descricao)
+                            descricao=descricao,
+                            solicitante=solicitante)
             
             ticket.save()
+
+            comentario = f"Ticket criado por {ticket.solicitante.first_name} {ticket.solicitante.last_name}."
+            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
+            comentario.save()
+
             return redirect(ticket.get_absolute_url())
 
     else:
@@ -158,6 +206,11 @@ def EncerrarTicketView(request, pk):
             ticket.data_encerramento = datetime.now()
 
             ticket.save()
+
+            comentario = f"Ticket encerrado por {ticket.tecnico.first_name} {ticket.tecnico.last_name}. Solução: {ticket.solucao}"
+            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
+            comentario.save()
+
             return redirect(ticket.get_absolute_url())
 
     else:
@@ -168,6 +221,37 @@ def EncerrarTicketView(request, pk):
     }
 
     return render(request, 'encerrar_ticket.html', context=context)
+
+@login_required
+@permission_required('tickets.pode_cancelar')
+def CancelarTicketView(request, pk):
+    ticket = get_object_or_404(Ticket, pk=pk)
+
+    if request.method == 'POST':
+        form = CancelarTicketForm(request.POST)
+
+        if form.is_valid():
+            motivo_cancelamento = form.cleaned_data['motivo_cancelamento']
+
+            ticket.motivo_cancelamento = motivo_cancelamento
+            ticket.estado = "CC"
+            ticket.data_encerramento = datetime.now()
+            ticket.save()
+
+            comentario = f"Ticket cancelado por {ticket.solicitante.first_name} {ticket.solicitante.last_name}. Motivo: {ticket.motivo_cancelamento}"
+            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
+            comentario.save()
+
+            return redirect(ticket.get_absolute_url())
+
+    else:
+        form = CancelarTicketForm()
+
+    context = {
+        'form': form
+    }
+
+    return render(request, 'cancelar_ticket.html', context=context)
 
 def index(request):
     '''Função de view da página de índice do PyDesk'''

@@ -19,3 +19,8 @@ class EncerrarTicketForm(ModelForm):
     class Meta:
         model = Ticket
         fields = ["solucao"]
+
+class CancelarTicketForm(ModelForm):
+    class Meta:
+        model = Ticket
+        fields = ["motivo_cancelamento"]

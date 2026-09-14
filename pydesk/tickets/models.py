@@ -152,7 +152,26 @@ class Ticket(models.Model):
         null=True,
         blank=True,
         default=None,
-        verbose_name="Técnico"
+        verbose_name="Técnico",
+        related_name="tecnico"
+    )
+
+    # Registro do criador do ticket
+    solicitante = models.ForeignKey(
+        Usuario,
+        on_delete=models.RESTRICT,
+        null=True,
+        blank=True,
+        default=None,
+        verbose_name="Solicitante",
+        related_name="solicitante"
+    )
+
+    motivo_cancelamento = models.TextField(
+        null=True,
+        blank=True,
+        help_text="Descreva em detalhes o motivo do cancelamento deste ticket",
+        verbose_name="Motivo do cancelamento"
     )
 
     def get_absolute_url(self):
@@ -200,7 +219,9 @@ class Comentario(models.Model):
     usuario = models.ForeignKey(
         Usuario,
         on_delete=models.RESTRICT,
-        null=False
+        null=True,
+        blank=True,
+        verbose_name="Usuário"
     )
 
     def __str__(self):

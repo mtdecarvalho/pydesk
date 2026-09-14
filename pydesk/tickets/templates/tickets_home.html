@@ -4,9 +4,12 @@
 <div id="navbar">
     <li><a href="{% url "meus_tickets" %}">Meus tickets</a></li>
     {% if perms.tickets.pode_encerrar %}
-    <li><a href="{% url "tickets_abertos" %}">Tickets abertos</a></li>
-    <li><a href="{% url "tickets_encerrados" %}">Tickets encerrados</a></li>
-    <li><a href="{% url "tickets_nao_alocados" %}">Tickets não alocados</a></li>
+        <li><a href="{% url "tickets_abertos" %}">Tickets abertos</a></li>
+        <li><a href="{% url "tickets_encerrados" %}">Tickets encerrados</a></li>
+        <li><a href="{% url "tickets_nao_alocados" %}">Tickets não alocados</a></li>
+    {% endif %}
+    {% if perms.tickets.pode_cancelar %}
+        <li><a href="{% url "tickets_cancelados" %}">Tickets cancelados</a></li>
     {% endif %}
 </div>
 <a href="{% url "tickets" %}">Voltar</a>
