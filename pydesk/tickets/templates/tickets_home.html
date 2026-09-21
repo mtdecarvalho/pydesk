@@ -1,16 +1,89 @@
 {% extends "base.html" %}
 
+{% block title %}Tickets · PyDesk{% endblock %}
+
 {% block navbar %}
-<div id="navbar">
-    <li><a href="{% url "meus_tickets" %}">Meus tickets</a></li>
-    {% if perms.tickets.pode_encerrar %}
-        <li><a href="{% url "tickets_abertos" %}">Tickets abertos</a></li>
-        <li><a href="{% url "tickets_encerrados" %}">Tickets encerrados</a></li>
-        <li><a href="{% url "tickets_nao_alocados" %}">Tickets não alocados</a></li>
-    {% endif %}
-    {% if perms.tickets.pode_cancelar %}
-        <li><a href="{% url "tickets_cancelados" %}">Tickets cancelados</a></li>
-    {% endif %}
-</div>
-<a href="{% url "tickets" %}">Voltar</a>
-{% endblock navbar %}
+<nav class="mb-6" aria-label="Navegação de tickets">
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm px-2 py-2">
+        <div class="flex flex-wrap items-center gap-1">
+
+            <!-- Voltar para a página inicial de tickets -->
+            <a href="{% url 'tickets' %}"
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-700 hover:text-brand-700 hover:bg-slate-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" />
+                </svg>
+                Tickets
+            </a>
+
+            <span class="mx-1 h-5 w-px bg-slate-200" aria-hidden="true"></span>
+
+            <!-- Meus tickets -->
+            <a href="{% url 'meus_tickets' %}"
+               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-100 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+                </svg>
+                Meus tickets
+            </a>
+
+            {% if perms.tickets.pode_encerrar %}
+                <!-- Tickets abertos -->
+                <a href="{% url 'tickets_abertos' %}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-100 transition-colors">
+                    <span class="h-2 w-2 rounded-full bg-brand-600" aria-hidden="true"></span>
+                    Tickets abertos
+                </a>
+
+                <!-- Tickets encerrados -->
+                <a href="{% url 'tickets_encerrados' %}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-100 transition-colors">
+                    <span class="h-2 w-2 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                    Tickets encerrados
+                </a>
+
+                <!-- Tickets não alocados -->
+                <a href="{% url 'tickets_nao_alocados' %}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-100 transition-colors">
+                    <span class="h-2 w-2 rounded-full bg-amber-500" aria-hidden="true"></span>
+                    Tickets não alocados
+                </a>
+            {% endif %}
+
+            {% if perms.tickets.pode_cancelar %}
+                <!-- Tickets cancelados -->
+                <a href="{% url 'tickets_cancelados' %}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-100 transition-colors">
+                    <span class="h-2 w-2 rounded-full bg-red-500" aria-hidden="true"></span>
+                    Tickets cancelados
+                </a>
+            {% endif %}
+        </div>
+    </div>
+</nav>
+{% endblock %}
+
+{% block conteudo %}
+<section>
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-6">
+        <div>
+            <h1 class="text-2xl font-semibold text-slate-900 tracking-tight">Tickets</h1>
+            <p class="mt-1 text-sm text-slate-500">Gerencie e acompanhe os chamados de TI.</p>
+        </div>
+    </div>
+
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm">
+        {% block lista_tickets %}
+        <div class="px-6 py-16 text-center">
+            <div class="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5.586a1 1 0 0 1 .707.293l5.414 5.414a1 1 0 0 1 .293.707V19a2 2 0 0 1-2 2Z" />
+                </svg>
+            </div>
+            <p class="text-sm font-medium text-slate-700">Selecione uma categoria acima</p>
+            <p class="mt-1 text-sm text-slate-500">Escolha uma das opções de navegação para listar os tickets.</p>
+        </div>
+        {% endblock %}
+    </div>
+</section>
+{% endblock %}

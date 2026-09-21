@@ -1,82 +1,222 @@
-{% extends "base.html" %}
+{% extends 'base.html' %}
 
-{% block titulo %}
-<title>PyDesk - {{ ticket.id }}</title>
-{% endblock titulo %}
+{% block title %}PyDesk · Ticket #{{ ticket.id }}{% endblock %}
 
 {% block conteudo %}
-    <a href="{% url "tickets" %}">Voltar</a>
-    {% if perms.tickets.pode_encerrar and ticket.estado == "AB" %}
-    <a href="{% url "encerrar_ticket" ticket.pk %}">Encerrar ticket</a>
-        {% if ticket.tecnico == None %}
-        <form action="" method="post">
-            {% csrf_token %}
-            <input type="submit" name="alocar_ticket" value="Alocar ticket">
-        </form>
-        {% endif %}
-        {% if ticket.tecnico != None %}
-        <form action="" method="post">
-            {% csrf_token %}
-            <input type="submit" name="desalocar_ticket" value="Desalocar ticket">
-        </form>
-        {% endif %}
-    {% endif %}
-    {% if perms.tickets.pode_cancelar and ticket.estado == "AB" and ticket.solicitante == user %}
-    <a href="{% url "cancelar_ticket" ticket.pk %}">Cancelar ticket</a>
-    {% endif %}
+<section class="max-w-4xl">
 
-    <h1>{{ ticket.id }}</h1>
-    <li>
-        <ul>Aberto em: {{ ticket.data_criacao }}</ul>
-        <ul>Última modificação em: {{ ticket.data_ultima_atualizacao }}</ul>
-        {% if ticket.estado == "EN" %}
-            <ul>Encerrado em: {{ ticket.data_encerramento }}</ul>
+    <!-- Barra de ações -->
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-6">
+        <a href="{% url 'tickets' %}"
+           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 border border-slate-200 bg-white hover:bg-slate-100 hover:text-slate-900 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M10.5 19.5 3 12m0 0 7.5-7.5M3 12h18" />
+            </svg>
+            Voltar
+        </a>
+
+        <div class="flex flex-wrap items-center gap-2">
+            {% if perms.tickets.pode_encerrar and ticket.estado == "AB" %}
+                <a href="{% url 'encerrar_ticket' ticket.pk %}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                    </svg>
+                    Encerrar ticket
+                </a>
+
+                {% if ticket.tecnico == None %}
+                <form action="" method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" name="alocar_ticket" value="1"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-white bg-brand-700 hover:bg-brand-800 transition-colors shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19 7.5v3m0 0v3m0-3h3m-3 0h-3m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM4 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 10.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                        </svg>
+                        Alocar ticket
+                    </button>
+                </form>
+                {% else %}
+                <form action="" method="post" class="inline">
+                    {% csrf_token %}
+                    <button type="submit" name="desalocar_ticket" value="1"
+                            class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-700 border border-slate-200 bg-white hover:bg-slate-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M22 10.5h-6m-2.25-4.125a3.375 3.375 0 1 1-6.75 0 3.375 3.375 0 0 1 6.75 0ZM4 19.235v-.11a6.375 6.375 0 0 1 12.75 0v.109A12.318 12.318 0 0 1 10.374 21c-2.331 0-4.512-.645-6.374-1.766Z" />
+                        </svg>
+                        Desalocar ticket
+                    </button>
+                </form>
+                {% endif %}
+            {% endif %}
+
+            {% if perms.tickets.pode_cancelar and ticket.estado == "AB" and ticket.solicitante == user %}
+                <a href="{% url 'cancelar_ticket' ticket.pk %}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-red-700 border border-red-200 bg-white hover:bg-red-50 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                    Cancelar ticket
+                </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Cabeçalho do ticket -->
+    <div class="bg-white border border-slate-200 rounded-lg shadow-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-slate-200">
+            <div class="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <span class="text-sm font-medium text-slate-400">#{{ ticket.id }}</span>
+                        {% if ticket.estado == "AB" %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100">
+                                <span class="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden="true"></span>
+                                {{ ticket.get_estado_display }}
+                            </span>
+                        {% elif ticket.estado == "EN" %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100">
+                                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
+                                {{ ticket.get_estado_display }}
+                            </span>
+                        {% elif ticket.estado == "CC" %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-100">
+                                <span class="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden="true"></span>
+                                {{ ticket.get_estado_display }}
+                            </span>
+                        {% else %}
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-200">
+                                {{ ticket.get_estado_display }}
+                            </span>
+                        {% endif %}
+                    </div>
+                    <h1 class="mt-2 text-2xl font-semibold text-slate-900 tracking-tight">{{ ticket.titulo }}</h1>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metadados -->
+        <dl class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4 px-6 py-5 border-b border-slate-200">
+            <div>
+                <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Aberto em</dt>
+                <dd class="mt-1 text-sm text-slate-700">{{ ticket.data_criacao }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Última modificação</dt>
+                <dd class="mt-1 text-sm text-slate-700">{{ ticket.data_ultima_atualizacao }}</dd>
+            </div>
+            {% if ticket.estado == "EN" %}
+            <div>
+                <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Encerrado em</dt>
+                <dd class="mt-1 text-sm text-slate-700">{{ ticket.data_encerramento }}</dd>
+            </div>
+            {% endif %}
+            <div>
+                <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Categoria</dt>
+                <dd class="mt-1 text-sm text-slate-700">{{ ticket.get_categoria_display }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Prioridade</dt>
+                <dd class="mt-1 text-sm text-slate-700">{{ ticket.get_prioridade_display }}</dd>
+            </div>
+            <div>
+                <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Técnico</dt>
+                <dd class="mt-1 text-sm text-slate-700">
+                    {% if ticket.tecnico %}
+                        {{ ticket.tecnico.first_name }} {{ ticket.tecnico.last_name }}
+                    {% else %}
+                        <span class="text-slate-400">Nenhum técnico associado</span>
+                    {% endif %}
+                </dd>
+            </div>
+            <div>
+                <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Solicitante</dt>
+                <dd class="mt-1 text-sm text-slate-700">{{ ticket.solicitante.first_name }} {{ ticket.solicitante.last_name }}</dd>
+            </div>
+        </dl>
+
+        <!-- Descrição -->
+        <div class="px-6 py-5">
+            <h2 class="text-xs font-medium uppercase tracking-wide text-slate-400">Descrição</h2>
+            <p class="mt-2 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ ticket.descricao }}</p>
+        </div>
+
+        <!-- Encerramento / Cancelamento -->
+        {% if ticket.estado == "EN" and ticket.solucao %}
+        <div class="px-6 py-5 border-t border-slate-200 bg-emerald-50/50">
+            <h3 class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
+                </svg>
+                Ticket encerrado
+            </h3>
+            <h4 class="mt-3 text-xs font-medium uppercase tracking-wide text-emerald-700">Solução</h4>
+            <p class="mt-1 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ ticket.solucao }}</p>
+        </div>
         {% endif %}
-        <ul>Categoria: {{ ticket.get_categoria_display }}</ul>
-        <ul>Prioridade: {{ ticket.get_prioridade_display }}</ul>
-        <ul>Estado: {{ ticket.get_estado_display }}</ul>
-        {% if ticket.tecnico %}
-        <ul>Técnico: {{ ticket.tecnico.first_name }} {{ ticket.tecnico.last_name }}</ul>
+
+        {% if ticket.estado == "CC" and ticket.motivo_cancelamento %}
+        <div class="px-6 py-5 border-t border-slate-200 bg-red-50/50">
+            <h3 class="inline-flex items-center gap-1.5 text-sm font-semibold text-red-800">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z" />
+                </svg>
+                Ticket cancelado
+            </h3>
+            <h4 class="mt-3 text-xs font-medium uppercase tracking-wide text-red-700">Motivo</h4>
+            <p class="mt-1 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ ticket.motivo_cancelamento }}</p>
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Comentários -->
+    <div class="mt-6">
+        <h3 class="text-lg font-semibold text-slate-900 tracking-tight mb-4">Comentários</h3>
+
+        {% if ticket.comentario_set.all %}
+            <ul class="space-y-4">
+                {% for comentario in ticket.comentario_set.all %}
+                <li class="bg-white border border-slate-200 rounded-lg shadow-sm px-5 py-4">
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2.5">
+                            <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-slate-100 text-xs font-semibold text-slate-600">
+                                {{ comentario.usuario.first_name|first }}{{ comentario.usuario.last_name|first }}
+                            </span>
+                            <span class="text-sm font-medium text-slate-900">{{ comentario.usuario.first_name }} {{ comentario.usuario.last_name }}</span>
+                        </div>
+                        <time class="text-xs text-slate-400">{{ comentario.data }}</time>
+                    </div>
+                    <p class="mt-3 text-sm leading-relaxed text-slate-700 whitespace-pre-line">{{ comentario.comentario }}</p>
+                </li>
+                {% endfor %}
+            </ul>
         {% else %}
-        <ul>Técnico: Nenhum técnico associado</ul>
+            <div class="bg-white border border-slate-200 rounded-lg shadow-sm px-6 py-10 text-center">
+                <p class="text-sm text-slate-500">Não há comentários para este ticket.</p>
+            </div>
         {% endif %}
-        <ul>Solicitante: {{ ticket.solicitante.first_name }} {{ ticket.solicitante.last_name }}</ul>
-    </li>
-    <h2>{{ ticket.titulo }}</h2>
-    <p>{{ ticket.descricao }}</p>
-    {% if ticket.estado == "EN" and ticket.solucao %}
-        <h3>Ticket encerrado</h3>
-        <h4>Solução</h4>
-        <p>{{ ticket.solucao }}</p>
-    {% endif %}
-    {% if ticket.estado == "CC" and ticket.motivo_cancelamento %}
-        <h3>Ticket cancelado</h3>
-        <h4>Motivo</h4>
-        <p>{{ ticket.motivo_cancelamento }}</p>
-    {% endif %}
-    <h3>Comentários</h3>
 
-    {% if ticket.comentario_set.all %}
-        {% for comentario in ticket.comentario_set.all %}
-        <h4>{{ comentario.usuario.first_name }} {{ comentario.usuario.last_name }}</h4>
-        <h5>{{ comentario.data }}</h5>
-        <p>{{ comentario.comentario }}</p>
-    {% endfor %}
-    {% else %}
-        <p>Não há comentários para este ticket.</p>
-    {% endif %}
-
-    {% if ticket.estado == "AB" %}
-        {% if ticket.solicitante == user or ticket.tecnico == user %}
-        
-        <form action="" method="post">
-            {% csrf_token %}
-            <table>
-            {{ comentario_form.as_table }}
-            </table>
-            <input type="submit" name="submit_comentario" value="Adicionar comentário">
-        </form>
-
+        <!-- Formulário de comentário -->
+        {% if ticket.estado == "AB" %}
+            {% if ticket.solicitante == user or ticket.tecnico == user %}
+            <div class="mt-6 bg-white border border-slate-200 rounded-lg shadow-sm px-5 py-5">
+                <h4 class="text-sm font-semibold text-slate-900 mb-4">Adicionar comentário</h4>
+                <form action="" method="post" class="space-y-4">
+                    {% csrf_token %}
+                    {{ comentario_form.as_p }}
+                    <div class="flex justify-end">
+                        <button type="submit" name="submit_comentario" value="1"
+                                class="inline-flex items-center gap-1.5 px-4 py-2 rounded-md text-sm font-medium text-white bg-brand-700 hover:bg-brand-800 transition-colors shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+                            </svg>
+                            Adicionar comentário
+                        </button>
+                    </div>
+                </form>
+            </div>
+            {% endif %}
         {% endif %}
-    {% endif %}
-{% endblock conteudo %}
+    </div>
+</section>
+{% endblock %}

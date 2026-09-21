@@ -1,6 +1,32 @@
 {% extends "base.html" %}
-
+{% block title %}PyDesk - Logout{% endblock %}
 {% block conteudo %}
-  <p>Saiu com sucesso.</p>
-  <a href="{% url 'login'%}">Clique aqui para entrar novamente.</a>
-{% endblock %}
+<div class="mx-auto max-w-md py-12">
+    <div class="rounded-lg border border-slate-200 bg-white p-8 shadow-sm">
+        <!-- Ícone de sucesso -->
+        <div class="mb-6 flex justify-center">
+            <div class="flex h-16 w-16 items-center justify-center rounded-full bg-green-50">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-green-600" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </div>
+        </div>
+
+        <!-- Título e mensagem -->
+        <h1 class="mb-2 text-center text-xl font-semibold text-slate-900">Logout realizado com sucesso</h1>
+        <p class="mb-8 text-center text-slate-600">Você foi desconectado da sua conta no PyDesk.</p>
+
+        <!-- Link para entrar novamente -->
+        <a href="{% url 'login' %}"
+           class="inline-flex w-full items-center justify-center rounded-md bg-brand-600 px-4 py-2.5 text-sm font-medium text-white hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-colors">
+            Entrar novamente
+        </a>
+
+        <!-- Link para voltar ao início (se logado depois) -->
+        <p class="mt-6 text-center text-sm text-slate-500">
+            Não é você?
+            <a href="{% url 'index' %}" class="font-medium text-brand-600 hover:text-brand-700">Voltar à página inicial</a>
+        </p>
+    </div>
+</div>
+{% endblock conteudo %}

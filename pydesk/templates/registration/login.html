@@ -1,36 +1,82 @@
 {% extends "base.html" %}
 
+{% block title %}PyDesk - Entrar{% endblock %}
+
 {% block conteudo %}
+<div class="mx-auto w-full max-w-md py-6">
+    <div class="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+        <!-- Cabeçalho do cartão -->
+        <div class="border-b border-slate-200 bg-slate-50 px-6 py-5">
+            <div class="flex items-center gap-3">
+                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-600 text-white">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 1 0-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 0 0 2.25-2.25v-6.75a2.25 2.25 0 0 0-2.25-2.25H6.75a2.25 2.25 0 0 0-2.25 2.25v6.75a2.25 2.25 0 0 0 2.25 2.25Z" />
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-semibold text-slate-900">Acessar o PyDesk</h1>
+                    <p class="text-sm text-slate-500">Entre com suas credenciais corporativas.</p>
+                </div>
+            </div>
+        </div>
 
-  {% if form.errors %}
-    <p>Seu usuário ou senha estão incorretos. Tente novamente.</p>
-  {% endif %}
+        <div class="px-6 py-6">
+            <!-- Erro de credenciais -->
+            {% if form.errors %}
+            <div class="mb-4 flex items-start gap-2 rounded-md border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">
+                <svg xmlns="http://www.w3.org/2000/svg" class="mt-0.5 h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />
+                </svg>
+                <span>Seu usuário ou senha estão incorretos. Tente novamente.</span>
+            </div>
+            {% endif %}
 
-  {% if next %}
-    {% if user.is_authenticated %}
-      <p>Sua conta não possui acesso à essa página. Para proceder, por favor entre com uma conta que possui o devido acesso.</p>
-    {% else %}
-      <p>Por favor faça login para visualizar esta página.</p>
-    {% endif %}
-  {% endif %}
+            <!-- Mensagens relacionadas a "next" -->
+            {% if next %}
+                {% if user.is_authenticated %}
+                <div class="mb-4 rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800" role="alert">
+                    Sua conta não possui acesso a essa página. Para proceder, por favor entre com uma conta que possui o devido acesso.
+                </div>
+                {% else %}
+                <div class="mb-4 rounded-md border border-brand-200 bg-brand-50 px-4 py-3 text-sm text-brand-800" role="status">
+                    Por favor faça login para visualizar esta página.
+                </div>
+                {% endif %}
+            {% endif %}
 
-  <form method="post" action="{% url 'login' %}">
-    {% csrf_token %}
-    <table>
-      <tr>
-        <td>{{ form.username.label_tag }}</td>
-        <td>{{ form.username }}</td>
-      </tr>
-      <tr>
-        <td>{{ form.password.label_tag }}</td>
-        <td>{{ form.password }}</td>
-      </tr>
-    </table>
-    <input type="submit" value="login">
-    <input type="hidden" name="next" value="{{ next }}">
-  </form>
+            <form method="post" action="{% url 'login' %}" class="flex flex-col gap-4">
+                {% csrf_token %}
 
-  {# Assumes you set up the password_reset view in your URLConf #}
-  <p><a href="{% url 'password_reset' %}">Esqueceu a senha?</a></p>
+                <div class="flex flex-col gap-1.5">
+                    <label for="{{ form.username.id_for_label }}" class="text-sm font-medium text-slate-700">
+                        {{ form.username.label }}
+                    </label>
+                    {{ form.username }}
+                </div>
 
+                <div class="flex flex-col gap-1.5">
+                    <label for="{{ form.password.id_for_label }}" class="text-sm font-medium text-slate-700">
+                        {{ form.password.label }}
+                    </label>
+                    {{ form.password }}
+                </div>
+
+                <button type="submit"
+                        class="mt-1 inline-flex items-center justify-center gap-2 rounded-md bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white shadow-sm hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2 transition-colors">
+                    Entrar
+                </button>
+
+                <input type="hidden" name="next" value="{{ next }}">
+            </form>
+        </div>
+
+        <!-- Rodapé do cartão -->
+        <div class="border-t border-slate-200 bg-slate-50 px-6 py-4 text-center">
+            {# Assumes you set up the password_reset view in your URLConf #}
+            <a href="{% url 'password_reset' %}" class="text-sm font-medium text-brand-600 hover:text-brand-700 hover:underline">
+                Esqueceu a senha?
+            </a>
+        </div>
+    </div>
+</div>
 {% endblock %}
