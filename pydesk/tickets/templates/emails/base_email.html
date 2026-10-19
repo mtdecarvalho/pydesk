@@ -1,0 +1,61 @@
+{% comment %}
+Template base para notificações de email do PyDesk.
+
+Uso sugerido:
+{% extends "emails/base_email.html" %}
+{% block email_title %}Novo ticket aberto{% endblock %}
+{% block email_heading %}Um novo ticket foi aberto{% endblock %}
+{% block email_content %}
+<p>Olá, {{ recipient_name }}.</p>
+<p>O ticket <strong>#{{ ticket.id }}</strong> foi aberto.</p>
+{% endblock %}
+{% endcomment %}
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block email_title %}Notificação do PyDesk{% endblock %}</title>
+</head>
+<body style="margin:0; padding:0; background-color:#f1f5f9; font-family:Arial, 'Helvetica Neue', Helvetica, sans-serif; color:#0f172a;">
+  <div style="display:none; max-height:0; overflow:hidden; opacity:0; color:transparent;">
+    {% block email_preheader %}Você tem uma nova atualização no PyDesk.{% endblock %}
+  </div>
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color:#f1f5f9; padding:24px 0;">
+    <tr>
+      <td align="center" style="padding:0 16px;">
+        <table role="presentation" width="560" cellpadding="0" cellspacing="0" border="0" style="width:560px; max-width:100%; background-color:#ffffff; border:1px solid #e2e8f0; border-radius:12px; overflow:hidden;">
+          <tr>
+            <td style="background-color:#1d4ed8; padding:24px 32px; text-align:center;">
+              <span style="display:inline-block; font-size:21px; font-weight:bold; color:#ffffff; letter-spacing:0.4px;">Py<span style="color:#dbeafe;">Desk</span></span>
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:32px;">
+              <h1 style="margin:0 0 20px; font-size:22px; line-height:1.3; color:#0f172a;">
+                {% block email_heading %}Atualização do ticket{% endblock %}
+              </h1>
+
+              <div style="font-size:15px; line-height:1.65; color:#334155;">
+                {% block email_content %}
+                <p style="margin:0 0 16px;">Há uma nova atualização em um ticket do PyDesk.</p>
+                {% endblock %}
+              </div>
+
+              {% block email_action %}{% endblock %}
+
+              {% block email_details %}{% endblock %}
+            </td>
+          </tr>
+          <tr>
+            <td style="padding:16px 32px; background-color:#f8fafc; border-top:1px solid #e2e8f0; text-align:center;">
+              <p style="margin:0; font-size:12px; line-height:1.5; color:#94a3b8;">PyDesk &middot; Sistema de chamados de TI</p>
+              <p style="margin:6px 0 0; font-size:12px; line-height:1.5; color:#94a3b8;">Esta é uma mensagem automática. Não responda a este email.</p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

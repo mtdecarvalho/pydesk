@@ -3,62 +3,68 @@
 {% block title %}PyDesk - Encerrar ticket{% endblock %}
 
 {% block conteudo %}
-<section class="py-2">
-    <!-- Cabeçalho -->
-    <div class="mb-6">
-        <nav class="mb-3 text-sm text-slate-500" aria-label="Navegação estrutural">
-            <a href="{% url 'tickets' %}" class="hover:text-brand-700 hover:underline">Tickets</a>
-            <span class="mx-1.5 text-slate-400">/</span>
-            <span class="text-slate-700">Encerrar ticket</span>
-        </nav>
-        <h1 class="text-2xl font-semibold text-slate-900">Encerrar ticket</h1>
-        <p class="mt-1 text-sm text-slate-500">Preencha os campos abaixo para encerrar este chamado de suporte.</p>
-    </div>
+{% if tecnico %}
+    <section class="py-2">
+        <!-- Cabeçalho -->
+        <div class="mb-6">
+            <nav class="mb-3 text-sm text-slate-500" aria-label="Navegação estrutural">
+                <a href="{% url 'tickets' %}" class="hover:text-brand-700 hover:underline">Tickets</a>
+                <span class="mx-1.5 text-slate-400">/</span>
+                <span class="text-slate-700">Encerrar ticket</span>
+            </nav>
+            <h1 class="text-2xl font-semibold text-slate-900">Encerrar ticket</h1>
+            <p class="mt-1 text-sm text-slate-500">Preencha os campos abaixo para encerrar este chamado de suporte.</p>
+        </div>
 
-    <!-- Formulário -->
-    <div class="rounded-lg border border-slate-200 bg-white shadow-sm">
-        <form action="" method="post" novalidate>
-            {% csrf_token %}
+        <!-- Formulário -->
+        <div class="rounded-lg border border-slate-200 bg-white shadow-sm">
+            <form action="" method="post" novalidate>
+                {% csrf_token %}
 
-            <div class="space-y-6 p-6">
-                {% if form.non_field_errors %}
-                <div class="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
-                    {{ form.non_field_errors }}
-                </div>
-                {% endif %}
-
-                {% for field in form %}
-                <div class="flex flex-col gap-1.5">
-                    <label for="{{ field.id_for_label }}" class="text-sm font-medium text-slate-700">
-                        {{ field.label }}
-                        {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
-                    </label>
-
-                    {{ field }}
-
-                    {% if field.help_text %}
-                    <p class="text-xs text-slate-500">{{ field.help_text }}</p>
+                <div class="space-y-6 p-6">
+                    {% if form.non_field_errors %}
+                    <div class="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+                        {{ form.non_field_errors }}
+                    </div>
                     {% endif %}
 
-                    {% if field.errors %}
-                    <p class="text-xs text-red-600">{{ field.errors|striptags }}</p>
-                    {% endif %}
-                </div>
-                {% endfor %}
-            </div>
+                    {% for field in form %}
+                    <div class="flex flex-col gap-1.5">
+                        <label for="{{ field.id_for_label }}" class="text-sm font-medium text-slate-700">
+                            {{ field.label }}
+                            {% if field.field.required %}<span class="text-red-500">*</span>{% endif %}
+                        </label>
 
-            <!-- Ações -->
-            <div class="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
-                <a href="{% url 'tickets' %}"
-                   class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
-                    Cancelar
-                </a>
-                <button type="submit"
-                        class="inline-flex items-center rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
-                    Criar ticket
-                </button>
-            </div>
-        </form>
+                        {{ field }}
+
+                        {% if field.help_text %}
+                        <p class="text-xs text-slate-500">{{ field.help_text }}</p>
+                        {% endif %}
+
+                        {% if field.errors %}
+                        <p class="text-xs text-red-600">{{ field.errors|striptags }}</p>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <!-- Ações -->
+                <div class="flex items-center justify-end gap-3 border-t border-slate-200 bg-slate-50 px-6 py-4">
+                    <a href="{% url 'tickets' %}"
+                    class="inline-flex items-center rounded-md border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+                        Voltar
+                    </a>
+                    <button type="submit"
+                            class="inline-flex items-center rounded-md bg-brand-600 px-4 py-2 text-sm font-medium text-white shadow-sm transition-colors hover:bg-brand-700 focus:outline-none focus:ring-2 focus:ring-brand-500 focus:ring-offset-2">
+                        Encerrar ticket
+                    </button>
+                </div>
+            </form>
+        </div>
+    </section>
+{% else %}
+    <div class="rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-700" role="alert">
+        Para encerrar um ticket, é necessário que ele esteja com um técnico alocado. Não é possível encerrar um ticket sem técnico alocado.
     </div>
-</section>
+{% endif %}
 {% endblock conteudo %}

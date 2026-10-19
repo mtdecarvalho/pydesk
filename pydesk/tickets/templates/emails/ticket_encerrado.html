@@ -1,0 +1,36 @@
+{% extends "emails/base_email.html" %}
+{% block email_title %}Ticket encerrado{% endblock %}
+{% block email_heading %}Um ticket foi encerrado{% endblock %}
+{% block email_content %}
+{% if ticket.tecnico.first_name and ticket.tecnico.last_name %}
+<p>O ticket <strong>#{{ ticket.id }}</strong> foi encerrado pelo técnico <strong>{{ ticket.tecnico.first_name }} {{ ticket.tecnico.last_name }}</strong>.</p>
+{% else %}
+<p>O ticket <strong>#{{ ticket.id }}</strong> foi encerrado pelo técnico <strong>{{ ticket.tecnico }}</strong>.</p>
+{% endif %}
+
+<p>Solução:</p>
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin:0 0 20px; border:1px solid #e2e8f0; border-radius:8px; background-color:#ffffff;">
+  <tr>
+    <td style="padding:16px 18px 0;">
+      <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+        <tr>
+          <td valign="middle" style="width:32px; height:32px; border-radius:50%; background-color:#f1f5f9; text-align:center; font-size:12px; font-weight:bold; color:#475569;">
+            {{ ticket.tecnico.first_name|first }}{{ ticket.tecnico.last_name|first }}
+          </td>
+          <td valign="middle" style="padding-left:10px; font-size:14px; font-weight:bold; color:#0f172a;">
+            {{ ticket.tecnico.first_name }} {{ ticket.tecnico.last_name }}
+          </td>
+          <td valign="middle" style="padding-left:12px; font-size:12px; color:#94a3b8;">
+            {{ ticket.data_encerramento }}
+          </td>
+        </tr>
+      </table>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding:14px 18px 18px; font-size:15px; line-height:1.65; color:#334155; white-space:pre-line;">
+      {{ ticket.solucao }}
+    </td>
+  </tr>
+</table>
+{% endblock %}

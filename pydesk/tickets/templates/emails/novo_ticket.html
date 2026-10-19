@@ -1,0 +1,6 @@
+{% extends "emails/base_email.html" %}
+{% block email_title %}Novo ticket aberto{% endblock %}
+{% block email_heading %}Um novo ticket foi aberto{% endblock %}
+{% block email_content %}
+<p>O ticket <strong>#{{ ticket.id }}</strong> foi aberto.</p>
+{% endblock %}

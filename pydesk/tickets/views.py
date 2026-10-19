@@ -9,15 +9,119 @@ from .forms import CancelarTicketForm, ComentarioForm, CriarTicketForm, Encerrar
 from .models import Ticket, Comentario
 
 from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.models import Group
+
+from django.core.mail import send_mail
+from django.template.loader import render_to_string
+from django.utils.html import strip_tags
+from django.conf import settings
 
 # Create your views here.
 
 class TicketListView(generic.ListView):
     model = Ticket
 
+
+def processar_email(ticket, tipo, comentario=None):
+    recipient_list = []
+    # Cria uma lista vazia para guardar os endereços de email
+
+    tecnicos = Group.objects.get(name__iexact="TECNICOS").user_set.all()
+    # Busca todos os técnicos, pesquisando os usuarios cadastrados no grupo de técnicos.
+    # Necessário na criação pois o ticket não é alocado a nenhum técnico na sua criação.
+    # Pode ser usado também no cancelamento.
+
+    if ticket.solicitante and ticket.solicitante.email:
+        recipient_list.append(ticket.solicitante.email)
+        # Adiciona o email do solicitante (criador do ticket) na lista
+
+    if tipo == "NOVO_TICKET":
+        context = {
+            "ticket": ticket
+        }
+        subject=f"[PyDesk] Novo Ticket Registrado #{ticket.id} - {ticket.titulo}"
+        template = 'emails/novo_ticket.html'
+
+        for tecnico in tecnicos:
+            if tecnico.email:
+                recipient_list.append(tecnico.email)
+                # Adiciona o email de todos os técnicos a lista de destinatarios
+
+    elif tipo == "NOVO_COMENTARIO":
+        context = {
+            "ticket": ticket,
+            "comentario": comentario,
+        }
+        subject=f"[PyDesk] Novo Comentário no Ticket #{ticket.id} - {ticket.titulo}"
+        template = 'emails/novo_comentario.html'
+
+        if ticket.tecnico:
+            recipient_list.append(ticket.tecnico.email)
+            # Se houver um técnico alocado a este ticket, envia o email somente a ele e ao solicitante.
+        else:
+            for tecnico in tecnicos:
+                if tecnico.email:
+                    recipient_list.append(tecnico.email)
+                    # Adiciona o email de todos os técnicos a lista de destinatarios
+    
+    elif tipo == "TICKET_ENCERRADO":
+        context = {
+            "ticket": ticket,
+            "comentario": comentario,
+        }
+        subject=f"[PyDesk] Ticket #{ticket.id} - {ticket.titulo} Encerrado"
+        template = 'emails/ticket_encerrado.html'
+        recipient_list.append(ticket.tecnico.email)
+
+    elif tipo == "TICKET_CANCELADO":
+        context = {
+            "ticket": ticket,
+            "comentario": comentario,
+        }
+        subject=f"[PyDesk] Ticket #{ticket.id} - {ticket.titulo} Cancelado"
+        template = 'emails/ticket_cancelado.html'
+        if ticket.tecnico:
+            recipient_list.append(ticket.tecnico.email)
+        else:
+            for tecnico in tecnicos:
+                if tecnico.email:
+                    recipient_list.append(tecnico.email)
+    
+    if recipient_list:
+        # Checa primeiro se há uma lista de destinatários antes de enviar o email.
+        html_message = render_to_string(template, context)
+        plain_text_content = strip_tags(html_message)
+        # O email é enviado em HTML, o plain text é só um fallback caso a opção acima não seja suportada. O ideal é que seja.
+
+        try:
+            send_mail(
+                subject=subject,
+                message=plain_text_content,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=recipient_list,
+                html_message=html_message,
+                fail_silently=False, # Defina como True em produção se não quiser travar em erros SMTP
+            )
+        except Exception as e:
+            print(f'Erro ao enviar email: {e}')
+
+    
+
 @login_required
 def TicketsHomeView(request):
-    return render(request, "tickets_home.html")
+    qtd_tickets = Ticket.objects.all().count()
+    qtd_tickets_abertos = Ticket.objects.all().filter(estado__exact="AB").count()
+    qtd_tickets_encerrados = Ticket.objects.all().filter(estado__exact="EN").count()
+    qtd_tickets_cancelados = Ticket.objects.all().filter(estado__exact="CC").count()
+
+    context = {
+        "qtd_tickets": qtd_tickets,
+        "qtd_tickets_abertos": qtd_tickets_abertos,
+        "qtd_tickets_encerrados": qtd_tickets_encerrados,
+        "qtd_tickets_cancelados": qtd_tickets_cancelados,
+    }
+
+    return render(request, "tickets_home.html", context=context)
 
 @login_required
 def MeusTicketsView(request):
@@ -52,7 +156,12 @@ def TicketsEncerradosView(request):
 @login_required
 @permission_required('tickets.pode_cancelar')
 def TicketsCanceladosView(request):
-    lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado="CC")
+    if request.user.is_superuser:
+        lista_tickets = Ticket.objects.filter(estado="CC")
+        # Permite que o admin veja todos os tickets cancelados
+    else:
+        lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado="CC")
+        # Se o usuario nao for adm, limita a visualização para tickets cancelados apenas por ele
 
     context = {
         "lista_tickets": lista_tickets,
@@ -88,9 +197,6 @@ def TicketsNaoAlocadosView(request):
 
     return render(request, "lista_tickets_generica.html", context=context)
 
-# class TicketDetailView(generic.DetailView):
-#     model = Ticket
-
 @login_required
 def TicketDetalheView(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
@@ -106,6 +212,12 @@ def TicketDetalheView(request, pk):
                 comentario = Comentario(comentario=comentario, id_ticket=id_ticket, usuario=usuario)
                 comentario.save()
                 ticket.save()
+
+                processar_email(
+                    ticket=ticket,
+                    comentario=comentario,
+                    tipo="NOVO_COMENTARIO"
+                )
 
                 return redirect('ticket_detalhe', pk=pk)
         elif "alocar_ticket" in request.POST:
@@ -179,6 +291,11 @@ def CriarTicketView(request):
             comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
             comentario.save()
 
+            processar_email(
+                ticket=ticket,
+                tipo="NOVO_TICKET"
+            )
+
             return redirect(ticket.get_absolute_url())
 
     else:
@@ -204,12 +321,17 @@ def EncerrarTicketView(request, pk):
             ticket.solucao = solucao
             ticket.estado = "EN"
             ticket.data_encerramento = datetime.now()
-
             ticket.save()
 
             comentario = f"Ticket encerrado por {ticket.tecnico.first_name} {ticket.tecnico.last_name}. Solução: {ticket.solucao}"
             comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
             comentario.save()
+
+            processar_email(
+                ticket=ticket,
+                comentario=comentario,
+                tipo="TICKET_ENCERRADO"
+            )
 
             return redirect(ticket.get_absolute_url())
 
@@ -217,7 +339,8 @@ def EncerrarTicketView(request, pk):
         form = EncerrarTicketForm()
 
     context = {
-        'form': form
+        'form': form,
+        'tecnico': ticket.tecnico,
     }
 
     return render(request, 'encerrar_ticket.html', context=context)
@@ -242,6 +365,12 @@ def CancelarTicketView(request, pk):
             comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
             comentario.save()
 
+            processar_email(
+                ticket=ticket,
+                comentario=comentario,
+                tipo="TICKET_CANCELADO"
+            )
+
             return redirect(ticket.get_absolute_url())
 
     else:
@@ -256,16 +385,4 @@ def CancelarTicketView(request, pk):
 def index(request):
     '''Função de view da página de índice do PyDesk'''
 
-    qtd_tickets = Ticket.objects.all().count()
-    qtd_tickets_abertos = Ticket.objects.all().filter(estado__exact="AB").count()
-    qtd_tickets_encerrados = Ticket.objects.all().filter(estado__exact="EN").count()
-    qtd_tickets_cancelados = Ticket.objects.all().filter(estado__exact="CC").count()
-
-    context = {
-        "qtd_tickets": qtd_tickets,
-        "qtd_tickets_abertos": qtd_tickets_abertos,
-        "qtd_tickets_encerrados": qtd_tickets_encerrados,
-        "qtd_tickets_cancelados": qtd_tickets_cancelados,
-    }
-
-    return render(request, "index.html", context=context)
+    return render(request, "index.html")

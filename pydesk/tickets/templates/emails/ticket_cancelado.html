@@ -1,0 +1,10 @@
+{% extends "emails/base_email.html" %}
+{% block email_title %}Ticket cancelado{% endblock %}
+{% block email_heading %}Um ticket foi cancelado{% endblock %}
+{% block email_content %}
+{% if ticket.solicitante.first_name and ticket.solicitante.last_name %}
+<p>O ticket <strong>#{{ ticket.id }}</strong> foi cancelado pelo usuário <strong>{{ ticket.solicitante.first_name }} {{ ticket.solicitante.last_name }}</strong>.</p>
+{% else %}
+<p>O ticket <strong>#{{ ticket.id }}</strong> foi cancelado pelo usuário {{ ticket.solicitante }}</strong>.</p>
+{% endif %}
+{% endblock %}

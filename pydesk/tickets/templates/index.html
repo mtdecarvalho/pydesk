@@ -3,251 +3,98 @@
 {% block title %}Início &middot; PyDesk{% endblock %}
 
 {% block conteudo %}
-
-    <!-- Banner -->
     <section class="relative overflow-hidden rounded-2xl bg-slate-900 shadow-sm">
         <div class="absolute inset-0 bg-gradient-to-r from-brand-900 via-brand-800 to-slate-900"></div>
         <div class="relative px-6 py-10 sm:px-12 sm:py-12">
             <div class="flex items-center gap-4">
-                <span class="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-white font-bold text-2xl ring-1 ring-white/20">
-                    P
-                </span>
+                <span class="inline-flex h-14 w-14 items-center justify-center rounded-xl bg-white/10 text-white font-bold text-2xl ring-1 ring-white/20">P</span>
                 <div>
-                    <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">
-                        Py<span class="text-brand-100">Desk</span>
-                    </h1>
-                    <p class="text-sm text-brand-100/80">
-                        Central de atendimento e chamados de TI
-                    </p>
+                    <h1 class="text-2xl sm:text-3xl font-bold text-white tracking-tight">Py<span class="text-brand-100">Desk</span></h1>
+                    <p class="text-sm text-brand-100/80">Central de atendimento e chamados de TI</p>
                 </div>
             </div>
-
             <p class="mt-6 max-w-2xl text-sm sm:text-base text-slate-200 leading-relaxed">
-                Bem-vindo ao PyDesk, a plataforma interna para abertura e acompanhamento
-                de chamados de TI. Acompanhe abaixo um panorama geral dos tickets do sistema.
+                Bem-vindo ao PyDesk, a plataforma interna para abertura e acompanhamento de chamados de TI.
             </p>
         </div>
     </section>
 
     {% if user.is_authenticated %}
-
         {% if perms.tickets.pode_encerrar %}
-            <!-- Dashboard de métricas -->
-            <section class="mt-8" aria-labelledby="metricas-titulo">
+            <section class="mt-8" aria-labelledby="tecnico-titulo">
                 <div class="flex items-center justify-between">
-                    <h2 id="metricas-titulo" class="text-lg font-semibold text-slate-900 tracking-tight">
-                        Visão geral dos tickets
-                    </h2>
-                    <a href="{% url 'tickets' %}"
-                    class="text-sm font-medium text-brand-700 hover:text-brand-800 transition-colors">
-                        Ver todos &rarr;
+                    <div>
+                        <p class="text-sm font-medium text-brand-700">Área do técnico</p>
+                        <h2 id="tecnico-titulo" class="mt-1 text-lg font-semibold text-slate-900 tracking-tight">Filas de atendimento</h2>
+                    </div>
+                    <a href="{% url 'tickets' %}" class="text-sm font-medium text-brand-700 hover:text-brand-800 transition-colors">Ver tickets &rarr;</a>
+                </div>
+                <div class="mt-4 grid gap-4 md:grid-cols-3">
+                    <a href="{% url 'tickets_abertos' %}" class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        </span>
+                        <h3 class="mt-4 font-semibold text-slate-900">Minha fila de tickets</h3>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-600">Acesse os tickets abertos atribuídos ao seu atendimento.</p>
+                        <span class="mt-4 block text-sm font-medium text-blue-600">Acessar fila &rarr;</span>
                     </a>
-                </div>
-
-                <!-- Cartões de indicadores -->
-                <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <!-- Total -->
-                    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-slate-500">Total de tickets</span>
-                            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-slate-100 text-slate-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
-                                </svg>
-                            </span>
-                        </div>
-                        <p class="mt-3 text-3xl font-bold text-slate-900">{{ qtd_tickets|default:0 }}</p>
-                    </article>
-
-                    <!-- Abertos -->
-                    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-slate-500">Abertos</span>
-                            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-blue-50 text-blue-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-                            </span>
-                        </div>
-                        <p class="mt-3 text-3xl font-bold text-blue-600">{{ qtd_tickets_abertos|default:0 }}</p>
-                    </article>
-
-                    <!-- Encerrados -->
-                    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-slate-500">Encerrados</span>
-                            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-                            </span>
-                        </div>
-                        <p class="mt-3 text-3xl font-bold text-emerald-600">{{ qtd_tickets_encerrados|default:0 }}</p>
-                    </article>
-
-                    <!-- Cancelados -->
-                    <article class="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-                        <div class="flex items-center justify-between">
-                            <span class="text-sm font-medium text-slate-500">Cancelados</span>
-                            <span class="flex h-9 w-9 items-center justify-center rounded-lg bg-rose-50 text-rose-600">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.75 9.75l4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                                </svg>
-                            </span>
-                        </div>
-                        <p class="mt-3 text-3xl font-bold text-rose-600">{{ qtd_tickets_cancelados|default:0 }}</p>
-                    </article>
-                </div>
-
-                <!-- Gráficos -->
-                <div class="mt-6 grid gap-6 lg:grid-cols-5">
-                    <!-- Distribuição (doughnut) -->
-                    <div class="lg:col-span-2 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <h3 class="text-sm font-semibold text-slate-900">Distribuição por status</h3>
-                        <p class="text-xs text-slate-500">Proporção de tickets em cada situação</p>
-                        <div class="mt-4 h-64">
-                            <canvas id="graficoDistribuicao" role="img"
-                                    aria-label="Gráfico de rosca com a distribuição de tickets por status"></canvas>
-                        </div>
-                    </div>
-
-                    <!-- Comparativo (bar) -->
-                    <div class="lg:col-span-3 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-                        <h3 class="text-sm font-semibold text-slate-900">Comparativo por status</h3>
-                        <p class="text-xs text-slate-500">Quantidade de tickets em cada situação</p>
-                        <div class="mt-4 h-64">
-                            <canvas id="graficoComparativo" role="img"
-                                    aria-label="Gráfico de barras comparando a quantidade de tickets por status"></canvas>
-                        </div>
-                    </div>
+                    <a href="{% url 'tickets_nao_alocados' %}" class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-amber-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-lg bg-amber-50 text-amber-600" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19.128a9.38 9.38 0 0 0 2.625.372 9.337 9.337 0 0 0 4.125-.948M15 19.128v-.003c0-1.113-.285-2.173-.78-3.1M15 19.128a23.8 23.8 0 0 1-3 .372c-1.035 0-2.044-.13-3-.372m6-3.003a5.25 5.25 0 1 0-6 0m6 0c-.28.08-.567.15-.86.21M9 16.125c-.293-.06-.58-.13-.86-.21M12 12.75a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" /></svg>
+                        </span>
+                        <h3 class="mt-4 font-semibold text-slate-900">Tickets não alocados</h3>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-600">Encontre novas solicitações e assuma o próximo atendimento.</p>
+                        <span class="mt-4 block text-sm font-medium text-amber-600">Ver fila &rarr;</span>
+                    </a>
+                    <a href="{% url 'tickets_encerrados' %}" class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-lg bg-emerald-50 text-emerald-600" aria-hidden="true">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m9 12.75 2.25 2.25L15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg>
+                        </span>
+                        <h3 class="mt-4 font-semibold text-slate-900">Tickets encerrados</h3>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-600">Consulte o histórico dos atendimentos concluídos.</p>
+                        <span class="mt-4 block text-sm font-medium text-emerald-600">Ver histórico &rarr;</span>
+                    </a>
                 </div>
             </section>
         {% endif %}
+
         {% if perms.tickets.pode_cancelar %}
-        <!-- Ação para usuários comuns -->
-            <section class="mt-8" aria-labelledby="novo-ticket-titulo">
-                <a href="{% url 'criar_ticket' %}"
-                   class="group flex items-center justify-between gap-4 rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2">
-                    <div class="flex items-center gap-4">
-                        <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700" aria-hidden="true">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                            </svg>
-                        </span>
-                        <div>
-                            <h2 id="novo-ticket-titulo" class="text-base font-semibold text-slate-900">Abrir novo ticket</h2>
-                            <p class="mt-1 text-sm leading-relaxed text-slate-600">Precisa de ajuda? Registre uma nova solicitação para a equipe de TI.</p>
-                        </div>
-                    </div>
-                    <span class="text-xl text-brand-700 transition-transform group-hover:translate-x-1" aria-hidden="true">&rarr;</span>
-                </a>
+            <section class="mt-8" aria-labelledby="usuario-titulo">
+                <div>
+                    <p class="text-sm font-medium text-brand-700">Área do usuário</p>
+                    <h2 id="usuario-titulo" class="mt-1 text-lg font-semibold text-slate-900 tracking-tight">Meus tickets</h2>
+                </div>
+                <div class="mt-4 grid gap-4 md:grid-cols-3">
+                    <a href="{% url 'criar_ticket' %}" class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-brand-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-lg bg-brand-50 text-brand-700" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></span>
+                        <h3 class="mt-4 font-semibold text-slate-900">Abrir novo ticket</h3>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-600">Registre uma nova solicitação para a equipe de TI.</p>
+                        <span class="mt-4 block text-sm font-medium text-brand-700">Criar ticket &rarr;</span>
+                    </a>
+                    <a href="{% url 'meus_tickets' %}" class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-lg bg-blue-50 text-blue-600" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" /></svg></span>
+                        <h3 class="mt-4 font-semibold text-slate-900">Meus tickets</h3>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-600">Acompanhe as solicitações que você criou.</p>
+                        <span class="mt-4 block text-sm font-medium text-blue-600">Acompanhar tickets &rarr;</span>
+                    </a>
+                    <a href="{% url 'tickets_cancelados' %}" class="group rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:border-rose-200 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-600 focus-visible:ring-offset-2">
+                        <span class="flex h-11 w-11 items-center justify-center rounded-lg bg-rose-50 text-rose-600" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m9.75 9.75 4.5 4.5m0-4.5-4.5 4.5M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" /></svg></span>
+                        <h3 class="mt-4 font-semibold text-slate-900">Tickets cancelados</h3>
+                        <p class="mt-1 text-sm leading-relaxed text-slate-600">Consulte os tickets seus que foram cancelados.</p>
+                        <span class="mt-4 block text-sm font-medium text-rose-600">Ver cancelados &rarr;</span>
+                    </a>
+                </div>
             </section>
         {% endif %}
     {% else %}
-        <!-- Aviso de autenticação -->
         <section class="mt-8 rounded-xl border border-brand-200 bg-brand-50 p-6 shadow-sm" role="status" aria-labelledby="autenticacao-titulo">
             <div class="flex items-start gap-4">
-                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700" aria-hidden="true">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25a3.75 3.75 0 0 0-7.5 0V9m-1.5 0h10.5A1.5 1.5 0 0 1 18.75 10.5v7.25a1.5 1.5 0 0 1-1.5 1.5H6.75a1.5 1.5 0 0 1-1.5-1.5V10.5A1.5 1.5 0 0 1 6.75 9Z" />
-                    </svg>
-                </span>
+                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-brand-100 text-brand-700" aria-hidden="true"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25a3.75 3.75 0 0 0-7.5 0V9m-1.5 0h10.5A1.5 1.5 0 0 1 18.75 10.5v7.25a1.5 1.5 0 0 1-1.5 1.5H6.75a1.5 1.5 0 0 1-1.5-1.5V10.5A1.5 1.5 0 0 1 6.75 9Z" /></svg></span>
                 <div>
-                    <h2 id="autenticacao-titulo" class="text-base font-semibold text-slate-900">
-                        Acesso necessário
-                    </h2>
-                    <a href="{% url 'login' %}">
-                        <p class="mt-1 text-sm leading-relaxed text-slate-600">
-                            Você não está autenticado. Entre com suas credenciais para utilizar a plataforma PyDesk.
-                        </p>    
-                    </a>
+                    <h2 id="autenticacao-titulo" class="text-base font-semibold text-slate-900">Acesso necessário</h2>
+                    <a href="{% url 'login' %}" class="mt-1 block text-sm leading-relaxed text-slate-600 hover:text-brand-700">Você não está autenticado. Entre com suas credenciais para utilizar a plataforma PyDesk.</a>
                 </div>
             </div>
         </section>
     {% endif %}
-
-    
-
-{% endblock %}
-
-{% block extra_scripts %}
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-    <script>
-        (function () {
-            const dados = {
-                abertos: {{ qtd_tickets_abertos|default:0 }},
-                encerrados: {{ qtd_tickets_encerrados|default:0 }},
-                cancelados: {{ qtd_tickets_cancelados|default:0 }},
-            };
-
-            const rotulos = ['Abertos', 'Encerrados', 'Cancelados'];
-            const valores = [dados.abertos, dados.encerrados, dados.cancelados];
-            const cores = ['#2563eb', '#059669', '#e11d48'];
-
-            Chart.defaults.font.family = "'Inter', ui-sans-serif, system-ui, sans-serif";
-            Chart.defaults.color = '#64748b';
-
-            const distribuicao = document.getElementById('graficoDistribuicao');
-            if (distribuicao) {
-                new Chart(distribuicao, {
-                    type: 'doughnut',
-                    data: {
-                        labels: rotulos,
-                        datasets: [{
-                            data: valores,
-                            backgroundColor: cores,
-                            borderColor: '#ffffff',
-                            borderWidth: 2,
-                            hoverOffset: 6,
-                        }],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        cutout: '62%',
-                        plugins: {
-                            legend: {
-                                position: 'bottom',
-                                labels: { usePointStyle: true, boxWidth: 8, padding: 16 },
-                            },
-                        },
-                    },
-                });
-            }
-
-            const comparativo = document.getElementById('graficoComparativo');
-            if (comparativo) {
-                new Chart(comparativo, {
-                    type: 'bar',
-                    data: {
-                        labels: rotulos,
-                        datasets: [{
-                            label: 'Tickets',
-                            data: valores,
-                            backgroundColor: cores,
-                            borderRadius: 6,
-                            maxBarThickness: 64,
-                        }],
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false },
-                        },
-                        scales: {
-                            y: {
-                                beginAtZero: true,
-                                ticks: { precision: 0 },
-                                grid: { color: '#f1f5f9' },
-                            },
-                            x: {
-                                grid: { display: false },
-                            },
-                        },
-                    },
-                });
-            }
-        })();
-    </script>
 {% endblock %}
