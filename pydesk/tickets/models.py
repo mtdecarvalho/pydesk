@@ -85,6 +85,7 @@ class Ticket(models.Model):
         (MODERADA, "Moderada"),
         (BAIXA, "Baixa")
     )
+    # TODO permitir edição de status!!
 
     prioridade = models.CharField(
         max_length=2,
@@ -102,11 +103,15 @@ class Ticket(models.Model):
 
     ABERTO = "AB"
     ENCERRADO = "EN"
+    EM_ANDAMENTO = "EA"
+    EM_ESPERA = "EE"
     CANCELADO = "CC"
 
     ESCOLHA_ESTADO = (
         (ABERTO, "Aberto"),
         (ENCERRADO, "Encerrado"),
+        (EM_ANDAMENTO, "Em Andamento"),
+        (EM_ESPERA, "Em Espera"),
         (CANCELADO, "Cancelado")
     )
 
@@ -139,8 +144,9 @@ class Ticket(models.Model):
     # Solução do ticket
     # PREENCHIDA SOMENTE NO ENCERRAMENTO
     solucao = models.TextField(
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
+        default='',
         help_text="Descreva em detalhes o que foi feito para solucionar este ticket",
         verbose_name="Solução"
     )
@@ -168,8 +174,9 @@ class Ticket(models.Model):
     )
 
     motivo_cancelamento = models.TextField(
-        null=True,
-        blank=True,
+        null=False,
+        blank=False,
+        default='',
         help_text="Descreva em detalhes o motivo do cancelamento deste ticket",
         verbose_name="Motivo do cancelamento"
     )
@@ -211,7 +218,6 @@ class Comentario(models.Model):
 
     comentario = models.TextField(
         null=False,
-        help_text="Insira o texto do seu comentário",
         verbose_name="Comentário"
     )
 

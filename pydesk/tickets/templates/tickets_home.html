@@ -45,10 +45,17 @@
                 <!-- Tickets não alocados -->
                 <a href="{% url 'tickets_nao_alocados' %}"
                    class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-100 transition-colors">
-                    <span class="h-2 w-2 rounded-full bg-amber-500" aria-hidden="true"></span>
+                    <span class="h-2 w-2 rounded-full bg-orange-500" aria-hidden="true"></span>
                     Tickets não alocados
                 </a>
             {% endif %}
+
+            <!-- Tickets em espera -->
+            <a href="{% url 'tickets_em_espera' %}"
+                class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-600 hover:text-brand-700 hover:bg-slate-100 transition-colors">
+                <span class="h-2 w-2 rounded-full bg-amber-500" aria-hidden="true"></span>
+                Tickets em espera
+            </a>
 
             {% if perms.tickets.pode_cancelar %}
                 <!-- Tickets cancelados -->

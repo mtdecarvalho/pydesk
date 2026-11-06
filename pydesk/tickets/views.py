@@ -3,9 +3,7 @@ from datetime import datetime
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import generic
 
-from autenticacao.models import Usuario
-
-from .forms import CancelarTicketForm, ComentarioForm, CriarTicketForm, EncerrarTicketForm
+from .forms import CancelarTicketForm, ComentarioForm, CriarTicketForm, EncerrarTicketForm, TicketEmEsperaForm
 from .models import Ticket, Comentario
 
 from django.contrib.auth.decorators import login_required, permission_required
@@ -126,16 +124,16 @@ def TicketsHomeView(request):
 @login_required
 def MeusTicketsView(request):
     if request.user.has_perm('tickets.pode_encerrar'):
-        lista_tickets = Ticket.objects.filter(tecnico=request.user).filter(estado="AB")
+        lista_tickets = Ticket.objects.filter(tecnico=request.user).filter(estado="EA")
     elif request.user.has_perm('tickets.pode_cancelar'):
-        lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado="AB")
+        lista_tickets = Ticket.objects.filter(solicitante=request.user).exclude(estado="CC").exclude(estado="EN")
     else:
         lista_tickets = None
 
     context = {
         "lista_tickets": lista_tickets,
-        "titulo": "Pydesk - Meus Tickets",
-        "aba": "Meus Tickets"
+        "titulo": "Pydesk - Meus tickets",
+        "aba": "Meus tickets"
     }
 
     return render(request, "lista_tickets_generica.html", context=context)
@@ -148,7 +146,7 @@ def TicketsEncerradosView(request):
     context = {
         "lista_tickets": lista_tickets,
         "titulo": "Pydesk - Tickets Encerrados",
-        "aba": "Tickets Encerrados"
+        "aba": "Tickets encerrados"
     }
 
     return render(request, "lista_tickets_generica.html", context=context)
@@ -166,7 +164,7 @@ def TicketsCanceladosView(request):
     context = {
         "lista_tickets": lista_tickets,
         "titulo": "Pydesk - Tickets Cancelados",
-        "aba": "Tickets Cancelados"
+        "aba": "Tickets cancelados"
     }
 
     return render(request, "lista_tickets_generica.html", context=context)
@@ -179,7 +177,7 @@ def TicketsAbertosView(request):
     context = {
         "lista_tickets": lista_tickets,
         "titulo": "Pydesk - Tickets Abertos",
-        "aba": "Tickets Abertos"
+        "aba": "Tickets abertos"
     }
 
     return render(request, "lista_tickets_generica.html", context=context)
@@ -191,8 +189,23 @@ def TicketsNaoAlocadosView(request):
 
     context = {
         "lista_tickets": lista_tickets,
-        "titulo": "Pydesk - Tickets Não Alocados",
-        "aba": "Tickets Não Alocados"
+        "titulo": "Pydesk - Tickets não alocados",
+        "aba": "Tickets não alocados"
+    }
+
+    return render(request, "lista_tickets_generica.html", context=context)
+
+@login_required
+def TicketsEmEsperaView(request):
+    if request.user.has_perm('pode_cancelar'):
+        lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado="EE")
+    else:
+        lista_tickets = Ticket.objects.filter(estado="EE")
+
+    context = {
+        "lista_tickets": lista_tickets,
+        "titulo": "Pydesk - Tickets Em Espera",
+        "aba": "Tickets em espera"
     }
 
     return render(request, "lista_tickets_generica.html", context=context)
@@ -211,13 +224,16 @@ def TicketDetalheView(request, pk):
                 usuario = request.user
                 comentario = Comentario(comentario=comentario, id_ticket=id_ticket, usuario=usuario)
                 comentario.save()
+
+                if ticket.estado == "EE":
+                    ticket.estado = "AB"
                 ticket.save()
 
-                processar_email(
-                    ticket=ticket,
-                    comentario=comentario,
-                    tipo="NOVO_COMENTARIO"
-                )
+                #processar_email(
+                #    ticket=ticket,
+                #    comentario=comentario,
+                #    tipo="NOVO_COMENTARIO"
+                #)
 
                 return redirect('ticket_detalhe', pk=pk)
         elif "alocar_ticket" in request.POST:
@@ -225,6 +241,7 @@ def TicketDetalheView(request, pk):
 
             tecnico = request.user
             ticket.tecnico = tecnico
+            ticket.estado = "EA"
 
             comentario = f"Ticket alocado para a fila de {tecnico.first_name} {tecnico.last_name}."
             comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
@@ -241,6 +258,7 @@ def TicketDetalheView(request, pk):
             comentario.save()
 
             ticket.tecnico = None
+            ticket.estado = "AB"
             ticket.save()
 
             
@@ -254,6 +272,12 @@ def TicketDetalheView(request, pk):
             ticket.tecnico = None
             ticket.estado = "CC"
 
+            ticket.save()
+
+        elif "alterar_prioridade" in request.POST:
+            ticket.prioridade = request.POST.get("prioridade")
+            comentario_form = ComentarioForm(prefix='comentario')
+            comentario = f"Prioridade alterada por {ticket.tecnico} para {ticket.prioridade}."
             ticket.save()
 
     else:
@@ -340,7 +364,7 @@ def EncerrarTicketView(request, pk):
 
     context = {
         'form': form,
-        'tecnico': ticket.tecnico,
+        'ticket': ticket,
     }
 
     return render(request, 'encerrar_ticket.html', context=context)
@@ -377,10 +401,46 @@ def CancelarTicketView(request, pk):
         form = CancelarTicketForm()
 
     context = {
-        'form': form
+        'form': form,
+        'ticket': ticket,
     }
 
     return render(request, 'cancelar_ticket.html', context=context)
+
+@login_required
+@permission_required('tickets.pode_encerrar')
+def TicketEmEsperaView(request, pk):
+    ticket = get_object_or_404(Ticket, pk=pk)
+
+    if request.method == 'POST':
+        form = TicketEmEsperaForm(request.POST)
+
+        if form.is_valid():
+            ticket.tecnico = None
+            ticket.estado = "EE"
+            ticket.save()
+
+            comentario = f"Este ticket está em espera, aguardando uma ação sua. Motivo: {form.cleaned_data['comentario']}"
+            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
+            comentario.save()
+
+            #processar_email(
+            #    ticket=ticket,
+            #    comentario=comentario,
+            #    tipo="TICKET_CANCELADO"
+            #)
+
+            return redirect(ticket.get_absolute_url())
+
+    else:
+        form = TicketEmEsperaForm()
+
+    context = {
+        'form': form,
+        'ticket': ticket
+    }
+
+    return render(request, 'em_espera_ticket.html', context=context)
 
 def index(request):
     '''Função de view da página de índice do PyDesk'''

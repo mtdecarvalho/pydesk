@@ -99,3 +99,16 @@ class CancelarTicketForm(TailwindFormMixin, ModelForm):
                 }
             ),
         }
+
+class TicketEmEsperaForm(TailwindFormMixin, ModelForm):
+    class Meta:
+        model = Comentario
+        fields = ["comentario"]
+        widgets = {
+            "motivo": Textarea(
+                attrs={
+                    "rows": 4,
+                    "placeholder": "Explique por que está colocando o ticket em espera...",
+                }
+            ),
+        }
