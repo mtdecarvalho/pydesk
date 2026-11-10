@@ -131,8 +131,7 @@ def TicketDetalheView(request, pk):
             if comentario_form.is_valid():
                 comentario = comentario_form.cleaned_data['comentario']
                 usuario = request.user
-                comentario = Comentario(comentario=comentario, ticket=ticket, usuario=usuario)
-                comentario.save()
+                Comentario.objects.create(comentario=comentario, ticket=ticket, usuario=usuario)
 
                 # Gera um novo registro no histórico
                 Historico.objects.create(
@@ -361,6 +360,10 @@ def TicketEmEsperaView(request, pk):
         form = TicketEmEsperaForm(request.POST)
 
         if form.is_valid():
+            comentario = form.cleaned_data['comentario']
+            usuario = ticket.tecnico
+            Comentario.objects.create(comentario=comentario,usuario=usuario, ticket=ticket)
+
             ticket.tecnico = None
             ticket.estado = Ticket.EscolhaEstado.EM_ESPERA
             ticket.save()

@@ -1,4 +1,4 @@
-from django.forms import ModelForm, Textarea, TextInput, Select
+from django.forms import ValidationError, ModelForm, Textarea, TextInput, Select
 
 from .models import Comentario, Ticket
 
@@ -86,6 +86,12 @@ class EncerrarTicketForm(TailwindFormMixin, ModelForm):
             ),
         }
 
+    def clean_solucao(self):
+        solucao = self.cleaned_data.get('solucao')
+        if not solucao or not solucao.strip():
+            raise ValidationError("A solução é obrigatória para encerrar o chamado.")
+        return solucao
+
 
 class CancelarTicketForm(TailwindFormMixin, ModelForm):
     class Meta:
@@ -99,6 +105,12 @@ class CancelarTicketForm(TailwindFormMixin, ModelForm):
                 }
             ),
         }
+
+    def clean_motivo_cancelamento(self):
+        motivo_cancelamento = self.cleaned_data.get('motivo_cancelamento')
+        if not motivo_cancelamento or not motivo_cancelamento.strip():
+            raise ValidationError("O motivo do cancelamento é obrigatório para cancelar o chamado.")
+        return motivo_cancelamento
 
 class TicketEmEsperaForm(TailwindFormMixin, ModelForm):
     class Meta:

@@ -1,5 +1,4 @@
 from datetime import datetime
-import uuid
 
 from django.db import models
 from django.urls import reverse
@@ -123,8 +122,8 @@ class Ticket(models.Model):
     # Solução do ticket
     # PREENCHIDA SOMENTE NO ENCERRAMENTO
     solucao = models.TextField(
-        null=False,
-        blank=False,
+        null=True,
+        blank=True,
         default='',
         help_text="Descreva em detalhes a solução deste ticket",
         verbose_name="Solução"
@@ -153,8 +152,8 @@ class Ticket(models.Model):
     )
 
     motivo_cancelamento = models.TextField(
-        null=False,
-        blank=False,
+        null=True,
+        blank=True,
         default='',
         help_text="Descreva em detalhes o motivo do cancelamento deste ticket",
         verbose_name="Motivo do cancelamento"
@@ -165,6 +164,41 @@ class Ticket(models.Model):
 
     def __str__(self):
         return f'{self.id} - {self.titulo} - {self.estado}'
+
+    def save(self, *args, **kwargs):
+        # Lista de estados que NÃO devem possuir solução, motivo de cancelamento ou data de encerramento
+        estados_ativos = [
+            self.EscolhaEstado.ABERTO,       # Ajuste a constante conforme o seu TextChoices
+            self.EscolhaEstado.EM_ANDAMENTO, # Ajuste conforme o seu TextChoices
+            self.EscolhaEstado.EM_ESPERA     # Ajuste conforme o seu TextChoices
+        ]
+
+        # Se o estado atual for Aberto, Em Andamento ou Em Espera, limpa os campos de encerramento/cancelamento
+        if self.estado in estados_ativos:
+            if self.estado == self.EscolhaEstado.ABERTO:
+                if self.tecnico: self.tecnico = None
+
+            self.solucao = None
+            self.motivo_cancelamento = None
+            self.data_encerramento = None
+            
+        elif self.estado == self.EscolhaEstado.ENCERRADO:
+            # Limpa o motivo de cancelamento caso exista pois não é relevante
+            if self.motivo_cancelamento: self.motivo_cancelamento = None
+            
+            # Preenche automaticamento a data_encerramento caso ela esteja vazia:
+            if not self.data_encerramento:
+                self.data_encerramento = datetime.now()
+        elif self.estado == self.EscolhaEstado.CANCELADO:
+            # Limpa a solução caso exista pois não é relevante
+            if self.solucao: self.solucao = None
+
+            # Gera a data de encerramento automaticamente
+            if not self.data_encerramento:
+                self.data_encerramento = datetime.now()
+
+        # Chama o save original do Django para persistir as alterações
+        super().save(*args, **kwargs)
 
     class Meta:
         permissions = (
