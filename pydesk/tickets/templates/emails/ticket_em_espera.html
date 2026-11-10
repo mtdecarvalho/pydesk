@@ -1,0 +1,6 @@
+{% extends "emails/base_email.html" %}
+{% block email_title %}Ticket em espera{% endblock %}
+{% block email_heading %}Um ticket está em espera{% endblock %}
+{% block email_content %}
+<p>O ticket <strong>#{{ ticket.id }}</strong> está atualmente em espera, aguardando mais detalhes.</p>
+{% endblock %}

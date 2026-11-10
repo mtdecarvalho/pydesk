@@ -136,3 +136,6 @@ EMAIL_HOST_PASSWORD = secret
 DEFAULT_FROM_EMAIL = 'PyDesk Support <seu_email@gmail.com>'
 
 LOGIN_REDIRECT_URL = '/'
+
+# Define o BigAutoField como o padrão de PK global para todos os models
+DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

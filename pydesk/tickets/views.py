@@ -4,113 +4,22 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views import generic
 
 from .forms import CancelarTicketForm, ComentarioForm, CriarTicketForm, EncerrarTicketForm, TicketEmEsperaForm
-from .models import Ticket, Comentario
+from .models import Ticket, Comentario, Historico
+from .utils import processar_email
 
 from django.contrib.auth.decorators import login_required, permission_required
-from django.contrib.auth.models import Group
-
-from django.core.mail import send_mail
-from django.template.loader import render_to_string
-from django.utils.html import strip_tags
-from django.conf import settings
 
 # Create your views here.
 
 class TicketListView(generic.ListView):
-    model = Ticket
-
-
-def processar_email(ticket, tipo, comentario=None):
-    recipient_list = []
-    # Cria uma lista vazia para guardar os endereços de email
-
-    tecnicos = Group.objects.get(name__iexact="TECNICOS").user_set.all()
-    # Busca todos os técnicos, pesquisando os usuarios cadastrados no grupo de técnicos.
-    # Necessário na criação pois o ticket não é alocado a nenhum técnico na sua criação.
-    # Pode ser usado também no cancelamento.
-
-    if ticket.solicitante and ticket.solicitante.email:
-        recipient_list.append(ticket.solicitante.email)
-        # Adiciona o email do solicitante (criador do ticket) na lista
-
-    if tipo == "NOVO_TICKET":
-        context = {
-            "ticket": ticket
-        }
-        subject=f"[PyDesk] Novo Ticket Registrado #{ticket.id} - {ticket.titulo}"
-        template = 'emails/novo_ticket.html'
-
-        for tecnico in tecnicos:
-            if tecnico.email:
-                recipient_list.append(tecnico.email)
-                # Adiciona o email de todos os técnicos a lista de destinatarios
-
-    elif tipo == "NOVO_COMENTARIO":
-        context = {
-            "ticket": ticket,
-            "comentario": comentario,
-        }
-        subject=f"[PyDesk] Novo Comentário no Ticket #{ticket.id} - {ticket.titulo}"
-        template = 'emails/novo_comentario.html'
-
-        if ticket.tecnico:
-            recipient_list.append(ticket.tecnico.email)
-            # Se houver um técnico alocado a este ticket, envia o email somente a ele e ao solicitante.
-        else:
-            for tecnico in tecnicos:
-                if tecnico.email:
-                    recipient_list.append(tecnico.email)
-                    # Adiciona o email de todos os técnicos a lista de destinatarios
-    
-    elif tipo == "TICKET_ENCERRADO":
-        context = {
-            "ticket": ticket,
-            "comentario": comentario,
-        }
-        subject=f"[PyDesk] Ticket #{ticket.id} - {ticket.titulo} Encerrado"
-        template = 'emails/ticket_encerrado.html'
-        recipient_list.append(ticket.tecnico.email)
-
-    elif tipo == "TICKET_CANCELADO":
-        context = {
-            "ticket": ticket,
-            "comentario": comentario,
-        }
-        subject=f"[PyDesk] Ticket #{ticket.id} - {ticket.titulo} Cancelado"
-        template = 'emails/ticket_cancelado.html'
-        if ticket.tecnico:
-            recipient_list.append(ticket.tecnico.email)
-        else:
-            for tecnico in tecnicos:
-                if tecnico.email:
-                    recipient_list.append(tecnico.email)
-    
-    if recipient_list:
-        # Checa primeiro se há uma lista de destinatários antes de enviar o email.
-        html_message = render_to_string(template, context)
-        plain_text_content = strip_tags(html_message)
-        # O email é enviado em HTML, o plain text é só um fallback caso a opção acima não seja suportada. O ideal é que seja.
-
-        try:
-            send_mail(
-                subject=subject,
-                message=plain_text_content,
-                from_email=settings.DEFAULT_FROM_EMAIL,
-                recipient_list=recipient_list,
-                html_message=html_message,
-                fail_silently=False, # Defina como True em produção se não quiser travar em erros SMTP
-            )
-        except Exception as e:
-            print(f'Erro ao enviar email: {e}')
-
-    
+    model = Ticket    
 
 @login_required
 def TicketsHomeView(request):
     qtd_tickets = Ticket.objects.all().count()
-    qtd_tickets_abertos = Ticket.objects.all().filter(estado__exact="AB").count()
-    qtd_tickets_encerrados = Ticket.objects.all().filter(estado__exact="EN").count()
-    qtd_tickets_cancelados = Ticket.objects.all().filter(estado__exact="CC").count()
+    qtd_tickets_abertos = Ticket.objects.all().filter(estado__exact=Ticket.EscolhaEstado.ABERTO).count()
+    qtd_tickets_encerrados = Ticket.objects.all().filter(estado__exact=Ticket.EscolhaEstado.ENCERRADO).count()
+    qtd_tickets_cancelados = Ticket.objects.all().filter(estado__exact=Ticket.EscolhaEstado.CANCELADO).count()
 
     context = {
         "qtd_tickets": qtd_tickets,
@@ -124,9 +33,9 @@ def TicketsHomeView(request):
 @login_required
 def MeusTicketsView(request):
     if request.user.has_perm('tickets.pode_encerrar'):
-        lista_tickets = Ticket.objects.filter(tecnico=request.user).filter(estado="EA")
+        lista_tickets = Ticket.objects.filter(tecnico=request.user).filter(estado=Ticket.EscolhaEstado.EM_ANDAMENTO)
     elif request.user.has_perm('tickets.pode_cancelar'):
-        lista_tickets = Ticket.objects.filter(solicitante=request.user).exclude(estado="CC").exclude(estado="EN")
+        lista_tickets = Ticket.objects.filter(solicitante=request.user).exclude(estado=Ticket.EscolhaEstado.CANCELADO).exclude(estado=Ticket.EscolhaEstado.ENCERRADO)
     else:
         lista_tickets = None
 
@@ -141,7 +50,7 @@ def MeusTicketsView(request):
 @login_required
 @permission_required('tickets.pode_encerrar')
 def TicketsEncerradosView(request):
-    lista_tickets = Ticket.objects.filter(estado="EN")
+    lista_tickets = Ticket.objects.filter(estado=Ticket.EscolhaEstado.ENCERRADO)
 
     context = {
         "lista_tickets": lista_tickets,
@@ -155,10 +64,10 @@ def TicketsEncerradosView(request):
 @permission_required('tickets.pode_cancelar')
 def TicketsCanceladosView(request):
     if request.user.is_superuser:
-        lista_tickets = Ticket.objects.filter(estado="CC")
+        lista_tickets = Ticket.objects.filter(estado=Ticket.EscolhaEstado.CANCELADO)
         # Permite que o admin veja todos os tickets cancelados
     else:
-        lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado="CC")
+        lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado=Ticket.EscolhaEstado.CANCELADO)
         # Se o usuario nao for adm, limita a visualização para tickets cancelados apenas por ele
 
     context = {
@@ -172,7 +81,7 @@ def TicketsCanceladosView(request):
 @login_required
 @permission_required('tickets.pode_encerrar')
 def TicketsAbertosView(request):
-    lista_tickets = Ticket.objects.filter(estado="AB")
+    lista_tickets = Ticket.objects.filter(estado=Ticket.EscolhaEstado.ABERTO)
 
     context = {
         "lista_tickets": lista_tickets,
@@ -185,7 +94,7 @@ def TicketsAbertosView(request):
 @login_required
 @permission_required('tickets.pode_encerrar')
 def TicketsNaoAlocadosView(request):
-    lista_tickets = Ticket.objects.filter(estado="AB").filter(tecnico=None)
+    lista_tickets = Ticket.objects.filter(estado=Ticket.EscolhaEstado.ABERTO).filter(tecnico=None)
 
     context = {
         "lista_tickets": lista_tickets,
@@ -198,9 +107,9 @@ def TicketsNaoAlocadosView(request):
 @login_required
 def TicketsEmEsperaView(request):
     if request.user.has_perm('pode_cancelar'):
-        lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado="EE")
+        lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado=Ticket.EscolhaEstado.EM_ESPERA)
     else:
-        lista_tickets = Ticket.objects.filter(estado="EE")
+        lista_tickets = Ticket.objects.filter(estado=Ticket.EscolhaEstado.EM_ESPERA)
 
     context = {
         "lista_tickets": lista_tickets,
@@ -215,70 +124,100 @@ def TicketDetalheView(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
 
     if request.method == 'POST':
+
         if "submit_comentario" in request.POST:
             comentario_form = ComentarioForm(request.POST, prefix='comentario')
 
             if comentario_form.is_valid():
                 comentario = comentario_form.cleaned_data['comentario']
-                id_ticket = ticket
                 usuario = request.user
-                comentario = Comentario(comentario=comentario, id_ticket=id_ticket, usuario=usuario)
+                comentario = Comentario(comentario=comentario, ticket=ticket, usuario=usuario)
                 comentario.save()
 
-                if ticket.estado == "EE":
-                    ticket.estado = "AB"
+                # Gera um novo registro no histórico
+                Historico.objects.create(
+                    ticket=ticket,
+                    usuario=request.user,
+                    tipo=Historico.TipoAcao.COMENTARIO,
+                )
+
+                # Reabre o ticket se estiver em espera
+                if ticket.estado == Ticket.EscolhaEstado.EM_ESPERA:
+                    ticket.estado = Ticket.EscolhaEstado.ABERTO
+
+                    Historico.objects.create(
+                        ticket=ticket,
+                        usuario=None,
+                        tipo=Historico.TipoAcao.ESTADO
+                    )
+
                 ticket.save()
 
-                #processar_email(
-                #    ticket=ticket,
-                #    comentario=comentario,
-                #    tipo="NOVO_COMENTARIO"
-                #)
+                processar_email(
+                    ticket=ticket,
+                    comentario=comentario,
+                    tipo="NOVO_COMENTARIO"
+                )
 
                 return redirect('ticket_detalhe', pk=pk)
+            
         elif "alocar_ticket" in request.POST:
-            comentario_form = ComentarioForm(prefix='comentario')
-
             tecnico = request.user
             ticket.tecnico = tecnico
-            ticket.estado = "EA"
-
-            comentario = f"Ticket alocado para a fila de {tecnico.first_name} {tecnico.last_name}."
-            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
-
+            ticket.estado = Ticket.EscolhaEstado.EM_ANDAMENTO
             ticket.save()
-            comentario.save()
+
+            Historico.objects.create(
+                ticket=ticket,
+                usuario=request.user,
+                tipo=Historico.TipoAcao.TECNICO
+            )
+
+            Historico.objects.create(
+                ticket=ticket,
+                usuario=None,
+                tipo=Historico.TipoAcao.ESTADO
+            )
+
+            processar_email(
+                ticket=ticket,
+                tipo="TICKET_EM_ANDAMENTO"
+            )
 
             return redirect('ticket_detalhe', pk=pk)
+        
         elif "desalocar_ticket" in request.POST:
-            comentario_form = ComentarioForm(prefix='comentario')
-
-            comentario = f"Ticket desalocado da fila de {ticket.tecnico.first_name} {ticket.tecnico.last_name}."
-            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
-            comentario.save()
-
             ticket.tecnico = None
-            ticket.estado = "AB"
+            ticket.estado = Ticket.EscolhaEstado.ABERTO
             ticket.save()
 
+            Historico.objects.create(
+                ticket=ticket,
+                usuario=request.user,
+                tipo=Historico.TipoAcao.TECNICO
+            )
             
-        elif "cancelar_ticket" in request.POST:
-            comentario_form = ComentarioForm(prefix='comentario')
+            Historico.objects.create(
+                ticket=ticket,
+                usuario=None,
+                tipo=Historico.TipoAcao.ESTADO
+            )
 
-            comentario = f"Ticket cancelado por {ticket.solicitante.first_name} {ticket.solicitante.last_name}."
-            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
-            comentario.save()
+            return redirect('ticket_detalhe', pk=pk)
 
-            ticket.tecnico = None
-            ticket.estado = "CC"
-
-            ticket.save()
 
         elif "alterar_prioridade" in request.POST:
             ticket.prioridade = request.POST.get("prioridade")
-            comentario_form = ComentarioForm(prefix='comentario')
-            comentario = f"Prioridade alterada por {ticket.tecnico} para {ticket.prioridade}."
             ticket.save()
+
+            Historico.objects.create(
+                ticket=ticket,
+                usuario=request.user,
+                tipo=Historico.TipoAcao.PRIORIDADE
+            )
+
+            return redirect('ticket_detalhe', pk=pk)
+
 
     else:
         comentario_form = ComentarioForm(initial={"comentario": ""}, prefix="comentario")
@@ -311,9 +250,11 @@ def CriarTicketView(request):
             
             ticket.save()
 
-            comentario = f"Ticket criado por {ticket.solicitante.first_name} {ticket.solicitante.last_name}."
-            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
-            comentario.save()
+            Historico.objects.create(
+                ticket=ticket,
+                usuario=request.user,
+                tipo=Historico.TipoAcao.CRIACAO
+            )
 
             processar_email(
                 ticket=ticket,
@@ -343,17 +284,19 @@ def EncerrarTicketView(request, pk):
             solucao = form.cleaned_data['solucao']
 
             ticket.solucao = solucao
-            ticket.estado = "EN"
+            ticket.estado = Ticket.EscolhaEstado.ENCERRADO
             ticket.data_encerramento = datetime.now()
             ticket.save()
 
-            comentario = f"Ticket encerrado por {ticket.tecnico.first_name} {ticket.tecnico.last_name}. Solução: {ticket.solucao}"
-            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
-            comentario.save()
+            Historico.objects.create(
+                ticket=ticket,
+                usuario=request.user,
+                tipo=Historico.TipoAcao.ENCERRAMENTO
+            )
 
             processar_email(
                 ticket=ticket,
-                comentario=comentario,
+                comentario=ticket.solucao,
                 tipo="TICKET_ENCERRADO"
             )
 
@@ -381,17 +324,19 @@ def CancelarTicketView(request, pk):
             motivo_cancelamento = form.cleaned_data['motivo_cancelamento']
 
             ticket.motivo_cancelamento = motivo_cancelamento
-            ticket.estado = "CC"
+            ticket.estado = Ticket.EscolhaEstado.CANCELADO
             ticket.data_encerramento = datetime.now()
             ticket.save()
 
-            comentario = f"Ticket cancelado por {ticket.solicitante.first_name} {ticket.solicitante.last_name}. Motivo: {ticket.motivo_cancelamento}"
-            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
-            comentario.save()
+            Historico.objects.create(
+                ticket=ticket,
+                usuario=request.user,
+                tipo=Historico.TipoAcao.CANCELAMENTO
+            )
 
             processar_email(
                 ticket=ticket,
-                comentario=comentario,
+                comentario=ticket.motivo_cancelamento,
                 tipo="TICKET_CANCELADO"
             )
 
@@ -417,18 +362,20 @@ def TicketEmEsperaView(request, pk):
 
         if form.is_valid():
             ticket.tecnico = None
-            ticket.estado = "EE"
+            ticket.estado = Ticket.EscolhaEstado.EM_ESPERA
             ticket.save()
 
-            comentario = f"Este ticket está em espera, aguardando uma ação sua. Motivo: {form.cleaned_data['comentario']}"
-            comentario = Comentario(comentario=comentario, id_ticket=ticket, usuario=None)
-            comentario.save()
+            Historico.objects.create(
+                ticket=ticket,
+                usuario=request.user,
+                tipo=Historico.TipoAcao.ESTADO
+            )
 
-            #processar_email(
-            #    ticket=ticket,
-            #    comentario=comentario,
-            #    tipo="TICKET_CANCELADO"
-            #)
+            processar_email(
+                ticket=ticket,
+                comentario=form.cleaned_data['comentario'],
+                tipo="TICKET_EM_ESPERA"
+            )
 
             return redirect(ticket.get_absolute_url())
 

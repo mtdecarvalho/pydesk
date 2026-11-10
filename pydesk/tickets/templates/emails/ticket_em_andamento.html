@@ -1,0 +1,10 @@
+{% extends "emails/base_email.html" %}
+{% block email_title %}Ticket em andamento{% endblock %}
+{% block email_heading %}Um ticket está em andamento{% endblock %}
+{% block email_content %}
+{% if ticket.tecnico.first_name and ticket.tecnico.last_name %}
+<p>O ticket <strong>#{{ ticket.id }}</strong> foi aceito pelo técnico {{ ticket.tecnico.first_name }} {{ ticket.tecnico.last_name }} e está atualmente em andamento.</p>
+{% else %}
+<p>O ticket <strong>#{{ ticket.id }}</strong> foi aceito pelo técnico {{ ticket.tecnico }} e está atualmente em andamento.</p>
+{% endif %}
+{% endblock %}

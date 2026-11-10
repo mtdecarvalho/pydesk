@@ -9,22 +9,18 @@ from pydesk.settings import AUTH_USER_MODEL as Usuario
 
 class Ticket(models.Model):
     '''
-    Modelo usado para representar um ticket.
-    id -> BigAutoField, chave primária
-    data_criacao -> datetime
-    data_encerramento -> datetime
-    data_ultima_atualizacao -> datetime
-    categoria -> CharField, choices = ESCOLHA_CATEGORIA
-    ativo -> ForeignKey, modelo "Ativo"
-    prioridade -> CharField, choices = ESCOLHA_PRIORIDADE
-    estado -> CharField, choices = ESCOLHA_ESTADO
-    titulo -> CharField
-    descricao -> TextField
-    solucao -> TextField
-    tecnico -> ForeignKey, modelo "Usuario"
+    Modelo usado para representar um ticket.\n
+    data_criacao -> datetime\n
+    data_encerramento -> datetime\n
+    data_ultima_atualizacao -> datetime\n
+    categoria -> CharField, choices = ESCOLHA_CATEGORIA\n
+    prioridade -> CharField, choices = ESCOLHA_PRIORIDADE\n
+    estado -> CharField, choices = ESCOLHA_ESTADO\n
+    titulo -> CharField\n
+    descricao -> TextField\n
+    solucao -> TextField\n
+    tecnico -> ForeignKey, modelo "Usuario"\n
     '''
-    id = models.BigAutoField(primary_key=True)
-
     # DATAS USADAS NO TICKET
 
     # Gerada automaticamente na abertura
@@ -55,43 +51,33 @@ class Ticket(models.Model):
     # CATEGORIA DO TICKET
     # Definido pelo usuário
 
-    HARDWARE = "HW"
-    SOFTWARE = "SW"
-    REDES = "RD"
-
-    ESCOLHA_CATEGORIA = (
-        (HARDWARE, "Hardware"),
-        (SOFTWARE, "Software"),
-        (REDES, "Redes"),
-    )
+    class EscolhaCategoria(models.TextChoices):
+        HARDWARE = 'HW', "Hardware",
+        SOFTWARE = 'SW', "Software",
+        REDES = 'RD', "Redes"
 
     categoria = models.CharField(
-        choices=ESCOLHA_CATEGORIA,
+        choices=EscolhaCategoria.choices,
         max_length=2,
         null=False,
-        default=HARDWARE,
+        default=EscolhaCategoria.HARDWARE,
         help_text='Escolha a categoria do seu ticket',
         verbose_name='Categoria'
     )
 
     # PRIORIDADE DO TICKET
     # Definido pelo usuário
-    ALTA = "P1"
-    MODERADA = "P2"
-    BAIXA = "P3"
 
-    ESCOLHA_PRIORIDADE = (
-        (ALTA, "Alta"),
-        (MODERADA, "Moderada"),
-        (BAIXA, "Baixa")
-    )
-    # TODO permitir edição de status!!
+    class EscolhaPrioridade(models.TextChoices):
+        ALTA = 'P1', 'Alta',
+        MODERADA = 'P2', 'Moderada',
+        BAIXA = 'P3', 'Baixa'
 
     prioridade = models.CharField(
         max_length=2,
         null=False,
-        choices=ESCOLHA_PRIORIDADE,
-        default=BAIXA,
+        choices=EscolhaPrioridade.choices,
+        default=EscolhaPrioridade.BAIXA,
         help_text="Escolha a prioridade do ticket",
         verbose_name="Prioridade"
     )
@@ -101,25 +87,18 @@ class Ticket(models.Model):
     # Quando um técnico encerrar o ticket, será Encerrado
     # Quando um usuário/técnico cancelar o ticket, será Cancelado
 
-    ABERTO = "AB"
-    ENCERRADO = "EN"
-    EM_ANDAMENTO = "EA"
-    EM_ESPERA = "EE"
-    CANCELADO = "CC"
-
-    ESCOLHA_ESTADO = (
-        (ABERTO, "Aberto"),
-        (ENCERRADO, "Encerrado"),
-        (EM_ANDAMENTO, "Em Andamento"),
-        (EM_ESPERA, "Em Espera"),
-        (CANCELADO, "Cancelado")
-    )
+    class EscolhaEstado(models.TextChoices):
+        ABERTO = 'AB', 'Aberto',
+        ENCERRADO = 'EN', 'Encerrado',
+        CANCELADO = 'CC', 'Cancelado',
+        EM_ANDAMENTO = 'EA', 'Em Andamento',
+        EM_ESPERA = 'EE', 'Em Espera'
 
     estado = models.CharField(
         max_length=2,
         null=False,
-        choices=ESCOLHA_ESTADO,
-        default=ABERTO,
+        choices=EscolhaEstado.choices,
+        default=EscolhaEstado.ABERTO,
         help_text="Estado atual do ticket",
         verbose_name="Estado"
     )
@@ -147,7 +126,7 @@ class Ticket(models.Model):
         null=False,
         blank=False,
         default='',
-        help_text="Descreva em detalhes o que foi feito para solucionar este ticket",
+        help_text="Descreva em detalhes a solução deste ticket",
         verbose_name="Solução"
     )
 
@@ -195,16 +174,14 @@ class Ticket(models.Model):
 
 class Comentario(models.Model):
     '''
-    Modelo usado para representar comentários de um ticket.
-    id -> BigAutoField, chave primária
-    id_ticket -> ForeignKey, modelo "Ticket"
-    comentario -> TextField
-    data_comentario -> datetime
-    usuario -> ForeignKey, modelo "Usuario"
+    Modelo usado para representar comentários de um ticket.\n
+    id -> BigAutoField, chave primária\n
+    ticket -> ForeignKey, modelo "Ticket"\n
+    comentario -> TextField\n
+    data_comentario -> datetime\n
+    usuario -> ForeignKey, modelo "Usuario"\n
     '''
-    id = models.BigAutoField(primary_key=True)
-
-    id_ticket = models.ForeignKey(
+    ticket = models.ForeignKey(
         Ticket,
         on_delete=models.RESTRICT,
         verbose_name="ID do ticket"
@@ -233,3 +210,75 @@ class Comentario(models.Model):
     def __str__(self):
         return f'{self.data} - {self.usuario} - {self.comentario}'
 
+class Historico(models.Model):
+    '''
+    Modelo usado para registrar um histórico de ações nos tickets.\n
+    ticket -> ForeignKey, modelo "Ticket"\n
+    usuario -> ForeignKey, modelo "User"\n
+    tipo -> CharField (CRIACAO, ATUALIZACAO, MUDANCA_STATUS, COMENTARIO)\n
+    acao -> TextField\n
+    data -> datetime\n
+    '''
+
+    ticket = models.ForeignKey(
+        Ticket,
+        on_delete=models.CASCADE,
+        verbose_name='Ticket'
+    )
+
+    usuario = models.ForeignKey(
+        Usuario,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        verbose_name='Usuário'
+    )
+
+    class TipoAcao(models.TextChoices):
+        CRIACAO = 'CRIACAO', 'Criação de ticket',
+        ENCERRAMENTO = 'ENCERRAMENTO', 'Encerramento de ticket',
+        CANCELAMENTO = 'CANCELAMENTO', 'Cancelamento de ticket',
+        TECNICO = 'TECNICO', 'Mudança de técnico',
+        ESTADO = 'ESTADO', 'Mudança de estado',
+        PRIORIDADE = 'PRIORIDADE', 'Mudança de prioridade',
+        COMENTARIO = 'COMENTARIO', 'Comentário'
+
+        
+    tipo = models.CharField(
+        choices=TipoAcao.choices, 
+        default=TipoAcao.ESTADO,
+        max_length=12,
+        verbose_name='Tipo de ação'
+    )
+
+    acao = models.TextField(verbose_name='Descrição da ação')
+
+    data = models.DateTimeField(
+        auto_now_add=True,
+        verbose_name='Data e hora'
+    )
+
+    def __str__(self):
+        return f"[{self.data.strftime('%d/%m/%Y %H:%M')}] Ticket #{self.ticket.id} - {self.acao[:30]} - {self.usuario}"
+
+    def save(self, *args, **kwargs):
+        usuario = self.usuario.get_username() if self.usuario else "Sistema"
+
+        acoes = {
+            self.TipoAcao.CRIACAO: f"Ticket criado por {usuario}",
+            self.TipoAcao.ENCERRAMENTO: f"Ticket encerrado por {usuario}",
+            self.TipoAcao.CANCELAMENTO: f"Ticket cancelado por {usuario}",
+            self.TipoAcao.TECNICO: f"Técnico foi alocado/desalocado do ticket por {usuario}",
+            self.TipoAcao.ESTADO: f"Estado do ticket alterado por {usuario}",
+            self.TipoAcao.PRIORIDADE: f"Prioridade alterada por {usuario}",
+            self.TipoAcao.COMENTARIO: f"Comentário adicionado por {usuario}",
+        }
+
+        self.acao = acoes.get(self.tipo, f"Ação realizada por {usuario}")
+
+        super().save(*args, **kwargs)
+
+    class Meta:
+        verbose_name = "Histórico do Ticket"
+        verbose_name_plural = "Históricos dos Tickets"
+        ordering = ['-data'] # Garante que os logs mais recentes apareçam primeiro por padrão
