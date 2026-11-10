@@ -96,7 +96,7 @@
             {% endif %}
 
             {% if perms.tickets.pode_cancelar and ticket.solicitante == user %}
-                {% if ticket.estado == "AB" or ticket.estado == "EE" %}
+                {% if ticket.estado == ticket.EscolhaEstado.ABERTO or ticket.estado == ticket.EscolhaEstado.EMESPERA %}
                     <a href="{% url 'cancelar_ticket' ticket.pk %}"
                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-red-700 border border-red-200 bg-white hover:bg-red-50 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
@@ -116,27 +116,27 @@
                 <div>
                     <div class="flex items-center gap-3">
                         <span class="text-sm font-medium text-slate-400">#{{ ticket.id }}</span>
-                        {% if ticket.estado == "AB" %}
+                        {% if ticket.estado == ticket.EscolhaEstado.ABERTO %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-brand-50 text-brand-700 ring-1 ring-inset ring-brand-100">
                                 <span class="h-1.5 w-1.5 rounded-full bg-brand-600" aria-hidden="true"></span>
                                 {{ ticket.get_estado_display }}
                             </span>
-                        {% elif ticket.estado == "EN" %}
+                        {% elif ticket.estado == ticket.EscolhaEstado.ENCERRADO %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-100">
                                 <span class="h-1.5 w-1.5 rounded-full bg-emerald-500" aria-hidden="true"></span>
                                 {{ ticket.get_estado_display }}
                             </span>
-                        {% elif ticket.estado == "CC" %}
+                        {% elif ticket.estado == ticket.EscolhaEstado.CANCELADO %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-red-50 text-red-700 ring-1 ring-inset ring-red-100">
                                 <span class="h-1.5 w-1.5 rounded-full bg-red-500" aria-hidden="true"></span>
                                 {{ ticket.get_estado_display }}
                             </span>
-                        {% elif ticket.estado == "EA" %}
+                        {% elif ticket.estado == ticket.EscolhaEstado.EM_ANDAMENTO %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-200">
                                 <span class="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden="true"></span>
                                 {{ ticket.get_estado_display }}
                             </span>
-                        {% elif ticket.estado == "EE" %}
+                        {% elif ticket.estado == ticket.EscolhaEstado.EM_ESPERA %}
                             <span class="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-medium bg-orange-50 text-orange-700 ring-1 ring-inset ring-orange-200">
                                 <span class="h-1.5 w-1.5 rounded-full bg-orange-500" aria-hidden="true"></span>
                                 {{ ticket.get_estado_display }}
@@ -162,7 +162,7 @@
                 <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Última modificação</dt>
                 <dd class="mt-1 text-sm text-slate-700">{{ ticket.data_ultima_atualizacao }}</dd>
             </div>
-            {% if ticket.estado == "EN" %}
+            {% if ticket.estado == ticket.EscolhaEstado.ENCERRADO %}
             <div>
                 <dt class="text-xs font-medium uppercase tracking-wide text-slate-400">Encerrado em</dt>
                 <dd class="mt-1 text-sm text-slate-700">{{ ticket.data_encerramento }}</dd>
@@ -199,7 +199,7 @@
         </div>
 
         <!-- Encerramento / Cancelamento -->
-        {% if ticket.estado == "EN" and ticket.solucao %}
+        {% if ticket.estado == ticket.EscolhaEstado.ENCERRADO and ticket.solucao %}
         <div class="px-6 py-5 border-t border-slate-200 bg-emerald-50/50">
             <h3 class="inline-flex items-center gap-1.5 text-sm font-semibold text-emerald-800">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
@@ -212,7 +212,7 @@
         </div>
         {% endif %}
 
-        {% if ticket.estado == "CC" and ticket.motivo_cancelamento %}
+        {% if ticket.estado == ticket.EscolhaEstado.CANCELADO and ticket.motivo_cancelamento %}
         <div class="px-6 py-5 border-t border-slate-200 bg-red-50/50">
             <h3 class="inline-flex items-center gap-1.5 text-sm font-semibold text-red-800">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
