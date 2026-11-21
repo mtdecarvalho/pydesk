@@ -2,17 +2,22 @@ from datetime import datetime
 
 from django.shortcuts import get_object_or_404, redirect, render
 from django.views import generic
+from django.views.decorators.http import require_GET
+
 
 from .forms import CancelarTicketForm, ComentarioForm, CriarTicketForm, EncerrarTicketForm, TicketEmEsperaForm
 from .models import Ticket, Comentario, Historico
 from .utils import processar_email
 
-from django.contrib.auth.decorators import login_required, permission_required
+from django.contrib.auth.decorators import login_required, permission_required, user_passes_test
 
 # Create your views here.
 
 class TicketListView(generic.ListView):
     model = Ticket    
+
+def eh_superuser(user):
+    return user.is_superuser
 
 @login_required
 def TicketsHomeView(request):
@@ -20,12 +25,16 @@ def TicketsHomeView(request):
     qtd_tickets_abertos = Ticket.objects.all().filter(estado__exact=Ticket.EscolhaEstado.ABERTO).count()
     qtd_tickets_encerrados = Ticket.objects.all().filter(estado__exact=Ticket.EscolhaEstado.ENCERRADO).count()
     qtd_tickets_cancelados = Ticket.objects.all().filter(estado__exact=Ticket.EscolhaEstado.CANCELADO).count()
+    qtd_tickets_em_andamento = Ticket.objects.all().filter(estado__exact=Ticket.EscolhaEstado.EM_ANDAMENTO).count()
+    qtd_tickets_em_espera = Ticket.objects.all().filter(estado__exact=Ticket.EscolhaEstado.EM_ESPERA).count()
 
     context = {
         "qtd_tickets": qtd_tickets,
         "qtd_tickets_abertos": qtd_tickets_abertos,
         "qtd_tickets_encerrados": qtd_tickets_encerrados,
         "qtd_tickets_cancelados": qtd_tickets_cancelados,
+        "qtd_tickets_em_andamento": qtd_tickets_em_andamento,
+        "qtd_tickets_em_espera": qtd_tickets_em_espera,
     }
 
     return render(request, "tickets_home.html", context=context)
@@ -391,6 +400,33 @@ def TicketEmEsperaView(request, pk):
     }
 
     return render(request, 'em_espera_ticket.html', context=context)
+
+@login_required
+@permission_required("tickets.view_historico", raise_exception=True)
+@require_GET
+def TicketHistoricoView(request, pk):
+    ticket = get_object_or_404(Ticket, pk=pk)
+    historicos = Historico.objects.filter(ticket=ticket).select_related("usuario").order_by("-data", "-pk")
+
+    return render(
+        request,
+        "historico_ticket.html",
+        {"ticket": ticket, "historicos": historicos},
+    )
+
+@login_required
+@user_passes_test(eh_superuser)
+def TodosTicketsView(request):
+    lista_tickets = Ticket.objects.all()
+    
+    context = {
+        "lista_tickets": lista_tickets,
+        "titulo": "Pydesk - Todos tickets",
+        "aba": "Todos tickets"
+    }
+
+    return render(request, "lista_tickets_generica.html", context=context)
+
 
 def index(request):
     '''Função de view da página de índice do PyDesk'''

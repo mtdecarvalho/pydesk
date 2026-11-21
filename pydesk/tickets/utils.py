@@ -9,7 +9,7 @@ def processar_email(ticket, tipo, comentario=None):
     recipient_list = []
     # Cria uma lista vazia para guardar os endereços de email
 
-    tecnicos = Group.objects.get(name__iexact="TECNICOS").user_set.all()
+    tecnicos = Group.objects.get(name__iexact="TECNICO").user_set.all()
     # Busca todos os técnicos, pesquisando os usuarios cadastrados no grupo de técnicos.
     # Necessário na criação pois o ticket não é alocado a nenhum técnico na sua criação.
     # Pode ser usado também no cancelamento.

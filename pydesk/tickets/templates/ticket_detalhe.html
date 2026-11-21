@@ -17,6 +17,16 @@
 
         <div class="flex flex-wrap items-center gap-2">
             {% if perms.tickets.pode_encerrar %}
+                {% if perms.tickets.view_historico %}
+                <a href="{% url 'ticket_historico' ticket.pk %}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-slate-700 border border-slate-200 bg-white hover:bg-slate-100 transition-colors shadow-sm"
+                   aria-label="Visualizar histórico do ticket #{{ ticket.id }}">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m6-2a10 10 0 1 1-20 0 10 10 0 0 1 20 0Z" />
+                    </svg>
+                    Histórico
+                </a>
+                {% endif %}
                 {% if ticket.estado == ticket.EscolhaEstado.ABERTO and ticket.tecnico == None %}
                     <form action="" method="post" class="inline">
                         {% csrf_token %}
@@ -83,7 +93,7 @@
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.8" stroke="currentColor" aria-hidden="true">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6.75 4.5v15m10.5-15v15M5.25 4.5h1.5m10.5 0h1.5M5.25 19.5h1.5m10.5 0h1.5" />
                         </svg>
-                        Colocar ticket em espera
+                        Colocar em espera
                     </a>
                     <a href="{% url 'encerrar_ticket' ticket.pk %}"
                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-white bg-emerald-600 hover:bg-emerald-700 transition-colors shadow-sm">
