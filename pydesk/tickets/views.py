@@ -1,8 +1,11 @@
 from datetime import datetime
 
+from django.db import transaction
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils import timezone
 from django.views import generic
 from django.views.decorators.http import require_GET
+from django.core.exceptions import PermissionDenied
 
 
 from .forms import CancelarTicketForm, ComentarioForm, CriarTicketForm, EncerrarTicketForm, TicketEmEsperaForm
@@ -18,6 +21,14 @@ class TicketListView(generic.ListView):
 
 def eh_superuser(user):
     return user.is_superuser
+
+def eh_tecnico_ou_admin(user):
+    return user.is_superuser or user.has_perm("tickets.pode_encerrar")
+
+def pode_acessar_ticket(user, ticket):
+    if user.is_superuser or user.has_perm("tickets.pode_encerrar"):
+        return True
+    return ticket.solicitante_id == user.pk
 
 @login_required
 def TicketsHomeView(request):
@@ -115,7 +126,7 @@ def TicketsNaoAlocadosView(request):
 
 @login_required
 def TicketsEmEsperaView(request):
-    if request.user.has_perm('pode_cancelar'):
+    if request.user.has_perm('tickets.pode_cancelar'):
         lista_tickets = Ticket.objects.filter(solicitante=request.user).filter(estado=Ticket.EscolhaEstado.EM_ESPERA)
     else:
         lista_tickets = Ticket.objects.filter(estado=Ticket.EscolhaEstado.EM_ESPERA)
@@ -132,6 +143,9 @@ def TicketsEmEsperaView(request):
 def TicketDetalheView(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
 
+    if not pode_acessar_ticket(request.user, ticket):
+        raise PermissionDenied("Você não tem permissão para visualizar este ticket.")
+
     if request.method == 'POST':
 
         if "submit_comentario" in request.POST:
@@ -139,27 +153,33 @@ def TicketDetalheView(request, pk):
 
             if comentario_form.is_valid():
                 comentario = comentario_form.cleaned_data['comentario']
-                usuario = request.user
-                Comentario.objects.create(comentario=comentario, ticket=ticket, usuario=usuario)
 
-                # Gera um novo registro no histórico
-                Historico.objects.create(
-                    ticket=ticket,
-                    usuario=request.user,
-                    tipo=Historico.TipoAcao.COMENTARIO,
-                )
+                with transaction.atomic():
+                    ticket_locked = get_object_or_404(Ticket.objects.select_for_update(), pk=pk)
+                    if not pode_acessar_ticket(request.user, ticket_locked):
+                        raise PermissionDenied("Você não tem permissão para comentar neste ticket.")
 
-                # Reabre o ticket se estiver em espera
-                if ticket.estado == Ticket.EscolhaEstado.EM_ESPERA:
-                    ticket.estado = Ticket.EscolhaEstado.ABERTO
+                    Comentario.objects.create(comentario=comentario, ticket=ticket_locked, usuario=request.user)
 
+                    # Gera um novo registro no histórico
                     Historico.objects.create(
-                        ticket=ticket,
-                        usuario=None,
-                        tipo=Historico.TipoAcao.ESTADO
+                        ticket=ticket_locked,
+                        usuario=request.user,
+                        tipo=Historico.TipoAcao.COMENTARIO,
                     )
 
-                ticket.save()
+                    # Reabre o ticket se estiver em espera
+                    if ticket_locked.estado == Ticket.EscolhaEstado.EM_ESPERA:
+                        ticket_locked.estado = Ticket.EscolhaEstado.ABERTO
+                        ticket_locked.save()
+
+                        Historico.objects.create(
+                            ticket=ticket_locked,
+                            usuario=None,
+                            tipo=Historico.TipoAcao.ESTADO
+                        )
+                    else:
+                        ticket_locked.save()
 
                 processar_email(
                     ticket=ticket,
@@ -170,62 +190,81 @@ def TicketDetalheView(request, pk):
                 return redirect('ticket_detalhe', pk=pk)
             
         elif "alocar_ticket" in request.POST:
-            tecnico = request.user
-            ticket.tecnico = tecnico
-            ticket.estado = Ticket.EscolhaEstado.EM_ANDAMENTO
-            ticket.save()
+            if not eh_tecnico_ou_admin(request.user):
+                raise PermissionDenied("Apenas técnicos podem alocar tickets.")
 
-            Historico.objects.create(
-                ticket=ticket,
-                usuario=request.user,
-                tipo=Historico.TipoAcao.TECNICO
-            )
+            with transaction.atomic():
+                ticket_locked = get_object_or_404(Ticket.objects.select_for_update(), pk=pk)
+                ticket_locked.tecnico = request.user
+                ticket_locked.estado = Ticket.EscolhaEstado.EM_ANDAMENTO
+                ticket_locked.save()
 
-            Historico.objects.create(
-                ticket=ticket,
-                usuario=None,
-                tipo=Historico.TipoAcao.ESTADO
-            )
+                Historico.objects.create(
+                    ticket=ticket_locked,
+                    usuario=request.user,
+                    tipo=Historico.TipoAcao.TECNICO
+                )
+
+                Historico.objects.create(
+                    ticket=ticket_locked,
+                    usuario=None,
+                    tipo=Historico.TipoAcao.ESTADO
+                )
 
             processar_email(
-                ticket=ticket,
+                ticket=ticket_locked,
                 tipo="TICKET_EM_ANDAMENTO"
             )
 
             return redirect('ticket_detalhe', pk=pk)
         
         elif "desalocar_ticket" in request.POST:
-            ticket.tecnico = None
-            ticket.estado = Ticket.EscolhaEstado.ABERTO
-            ticket.save()
+            if not eh_tecnico_ou_admin(request.user):
+                raise PermissionDenied("Apenas técnicos podem desalocar tickets.")
 
-            Historico.objects.create(
-                ticket=ticket,
-                usuario=request.user,
-                tipo=Historico.TipoAcao.TECNICO
-            )
-            
-            Historico.objects.create(
-                ticket=ticket,
-                usuario=None,
-                tipo=Historico.TipoAcao.ESTADO
-            )
+            with transaction.atomic():
+                ticket_locked = get_object_or_404(Ticket.objects.select_for_update(), pk=pk)
+                ticket_locked.tecnico = None
+                ticket_locked.estado = Ticket.EscolhaEstado.ABERTO
+                ticket_locked.save()
+
+                Historico.objects.create(
+                    ticket=ticket_locked,
+                    usuario=request.user,
+                    tipo=Historico.TipoAcao.TECNICO
+                )
+                
+                Historico.objects.create(
+                    ticket=ticket_locked,
+                    usuario=None,
+                    tipo=Historico.TipoAcao.ESTADO
+                )
 
             return redirect('ticket_detalhe', pk=pk)
 
 
         elif "alterar_prioridade" in request.POST:
-            ticket.prioridade = request.POST.get("prioridade")
-            ticket.save()
+            if not eh_tecnico_ou_admin(request.user):
+                raise PermissionDenied("Apenas técnicos podem alterar a prioridade.")
+            
+            nova_prioridade = request.POST.get("prioridade")
+            prioridades_validas = dict(Ticket.EscolhaPrioridade.choices)
 
-            Historico.objects.create(
-                ticket=ticket,
-                usuario=request.user,
-                tipo=Historico.TipoAcao.PRIORIDADE
-            )
+            if nova_prioridade not in prioridades_validas:
+                raise PermissionDenied("Prioridade inválida.")
+
+            with transaction.atomic():
+                ticket_locked = get_object_or_404(Ticket.objects.select_for_update(), pk=pk)
+                ticket_locked.prioridade = nova_prioridade
+                ticket_locked.save()
+
+                Historico.objects.create(
+                    ticket=ticket,
+                    usuario=request.user,
+                    tipo=Historico.TipoAcao.PRIORIDADE
+                )
 
             return redirect('ticket_detalhe', pk=pk)
-
 
     else:
         comentario_form = ComentarioForm(initial={"comentario": ""}, prefix="comentario")
@@ -281,7 +320,7 @@ def CriarTicketView(request):
     return render(request, 'criar_ticket.html', context=context)
 
 @login_required
-@permission_required('tickets.pode_encerrar')
+@permission_required('tickets.pode_encerrar', raise_exception=True)
 def EncerrarTicketView(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
 
@@ -291,20 +330,22 @@ def EncerrarTicketView(request, pk):
         if form.is_valid():
             solucao = form.cleaned_data['solucao']
 
-            ticket.solucao = solucao
-            ticket.estado = Ticket.EscolhaEstado.ENCERRADO
-            ticket.data_encerramento = datetime.now()
-            ticket.save()
+            with transaction.atomic():
+                ticket_locked = get_object_or_404(Ticket.objects.select_for_update(), pk=pk)
+                ticket_locked.solucao = solucao
+                ticket_locked.estado = Ticket.EscolhaEstado.ENCERRADO
+                ticket_locked.data_encerramento = timezone.now()
+                ticket_locked.save()
 
-            Historico.objects.create(
-                ticket=ticket,
-                usuario=request.user,
-                tipo=Historico.TipoAcao.ENCERRAMENTO
-            )
+                Historico.objects.create(
+                    ticket=ticket_locked,
+                    usuario=request.user,
+                    tipo=Historico.TipoAcao.ENCERRAMENTO
+                )
 
             processar_email(
-                ticket=ticket,
-                comentario=ticket.solucao,
+                ticket=ticket_locked,
+                comentario=ticket_locked.solucao,
                 tipo="TICKET_ENCERRADO"
             )
 
@@ -321,9 +362,12 @@ def EncerrarTicketView(request, pk):
     return render(request, 'encerrar_ticket.html', context=context)
 
 @login_required
-@permission_required('tickets.pode_cancelar')
+@permission_required('tickets.pode_cancelar', raise_exception=True)
 def CancelarTicketView(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
+
+    if not pode_acessar_ticket(request.user, ticket):
+        raise PermissionDenied("Você não tem permissão para cancelar este ticket.")
 
     if request.method == 'POST':
         form = CancelarTicketForm(request.POST)
@@ -331,20 +375,22 @@ def CancelarTicketView(request, pk):
         if form.is_valid():
             motivo_cancelamento = form.cleaned_data['motivo_cancelamento']
 
-            ticket.motivo_cancelamento = motivo_cancelamento
-            ticket.estado = Ticket.EscolhaEstado.CANCELADO
-            ticket.data_encerramento = datetime.now()
-            ticket.save()
+            with transaction.atomic():
+                ticket_locked = get_object_or_404(Ticket.objects.select_for_update(), pk=pk)
+                ticket_locked.motivo_cancelamento = motivo_cancelamento
+                ticket_locked.estado = Ticket.EscolhaEstado.CANCELADO
+                ticket_locked.data_encerramento = timezone.now()
+                ticket_locked.save()
 
-            Historico.objects.create(
-                ticket=ticket,
-                usuario=request.user,
-                tipo=Historico.TipoAcao.CANCELAMENTO
-            )
+                Historico.objects.create(
+                    ticket=ticket_locked,
+                    usuario=request.user,
+                    tipo=Historico.TipoAcao.CANCELAMENTO
+                )
 
             processar_email(
-                ticket=ticket,
-                comentario=ticket.motivo_cancelamento,
+                ticket=ticket_locked,
+                comentario=ticket_locked.motivo_cancelamento,
                 tipo="TICKET_CANCELADO"
             )
 
@@ -361,7 +407,7 @@ def CancelarTicketView(request, pk):
     return render(request, 'cancelar_ticket.html', context=context)
 
 @login_required
-@permission_required('tickets.pode_encerrar')
+@permission_required('tickets.pode_encerrar', raise_exception=True)
 def TicketEmEsperaView(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
 
@@ -370,22 +416,25 @@ def TicketEmEsperaView(request, pk):
 
         if form.is_valid():
             comentario = form.cleaned_data['comentario']
-            usuario = ticket.tecnico
-            Comentario.objects.create(comentario=comentario,usuario=usuario, ticket=ticket)
 
-            ticket.tecnico = None
-            ticket.estado = Ticket.EscolhaEstado.EM_ESPERA
-            ticket.save()
+            with transaction.atomic():
+                ticket_locked = get_object_or_404(Ticket.objects.select_for_update(), pk=pk)
+                usuario = ticket_locked.tecnico
+                Comentario.objects.create(comentario=comentario,usuario=usuario, ticket=ticket_locked)
 
-            Historico.objects.create(
-                ticket=ticket,
-                usuario=request.user,
-                tipo=Historico.TipoAcao.ESTADO
-            )
+                ticket_locked.tecnico = None
+                ticket_locked.estado = Ticket.EscolhaEstado.EM_ESPERA
+                ticket_locked.save()
+
+                Historico.objects.create(
+                    ticket=ticket_locked,
+                    usuario=request.user,
+                    tipo=Historico.TipoAcao.ESTADO
+                )
 
             processar_email(
-                ticket=ticket,
-                comentario=form.cleaned_data['comentario'],
+                ticket=ticket_locked,
+                comentario=comentario,
                 tipo="TICKET_EM_ESPERA"
             )
 
@@ -406,6 +455,9 @@ def TicketEmEsperaView(request, pk):
 @require_GET
 def TicketHistoricoView(request, pk):
     ticket = get_object_or_404(Ticket, pk=pk)
+    if not pode_acessar_ticket(request.user, ticket):
+        raise PermissionDenied("Você não tem permissão para ver o histórico deste ticket.")
+    
     historicos = Historico.objects.filter(ticket=ticket).select_related("usuario").order_by("-data", "-pk")
 
     return render(

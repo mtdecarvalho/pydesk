@@ -2,6 +2,7 @@ from datetime import datetime
 
 from django.db import models
 from django.urls import reverse
+from django.utils import timezone
 from pydesk.settings import AUTH_USER_MODEL as Usuario
 
 # Create your models here.
@@ -188,14 +189,14 @@ class Ticket(models.Model):
             
             # Preenche automaticamento a data_encerramento caso ela esteja vazia:
             if not self.data_encerramento:
-                self.data_encerramento = datetime.now()
+                self.data_encerramento = timezone.now()
         elif self.estado == self.EscolhaEstado.CANCELADO:
             # Limpa a solução caso exista pois não é relevante
             if self.solucao: self.solucao = None
 
             # Gera a data de encerramento automaticamente
             if not self.data_encerramento:
-                self.data_encerramento = datetime.now()
+                self.data_encerramento = timezone.now()
 
         # Chama o save original do Django para persistir as alterações
         super().save(*args, **kwargs)

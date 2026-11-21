@@ -18,5 +18,4 @@ urlpatterns = [
     path('tickets/<int:pk>/encerrar', views.EncerrarTicketView, name="encerrar_ticket"),
     path('tickets/<int:pk>/cancelar', views.CancelarTicketView, name="cancelar_ticket"),
     path('tickets/<int:pk>/em_espera', views.TicketEmEsperaView, name="em_espera_ticket"),
-    path("admin/", admin.site.urls)
 ]
